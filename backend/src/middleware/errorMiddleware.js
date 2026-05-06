@@ -1,5 +1,7 @@
 // Xử lý toàn bộ lỗi tập trung cho ứng dụng Express
 
+import ApiResponse from "../utils/apiResponse.js";
+
 const errorMiddleware = (err, req, res, next) => {
 
     // Nếu lỗi không có status code thì mặc định là 500
@@ -13,32 +15,34 @@ const errorMiddleware = (err, req, res, next) => {
 
         console.error("DEV ERROR: ", err);
 
-        return res.status(err.statusCode).json({
-            success: false,
-            status: err.status,
-            message: err.message,
-            // Stack trace giúp biết lỗi xảy ra ở đâu
-            stack: err.stack
-        });
+        return ApiResponse.errors(
+            res, 
+            err.message,
+            err.statusCode,
+            {
+                stack: err.stack
+            }
+        )
+
     }else{
         // PRODUCTION MODE (Lỗi do mình chủ động xử lý)
         if(err.isOperational){
 
-            return res.status(err.statusCode).json({
-                success: false,
-                status: err.status,
-                message: err.message
-            });
+            return ApiResponse.errors(
+                res,
+                err.message,
+                err.statusCode
+            )
         }
 
         // Lỗi hệ thống không xác định
         console.error('PRODUCTION ERROR: ', err);
 
-        return res.status(500).json({
-            success: false,
-            status: 'error',
-            message: 'Something went very wrong!'
-        });
+        return ApiResponse.errors(
+            res,
+            'Something went very wrong!',
+            500
+        )
     }
 };
 
