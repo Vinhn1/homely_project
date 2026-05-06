@@ -1,5 +1,9 @@
 import express from 'express';
 import 'dotenv/config';
+import { connectDB } from './config/db.js';
+
+
+connectDB();
 
 const app = express();
 
@@ -10,5 +14,5 @@ app.get('/', (req, res) => {
 })
 
 app.listen(port, () => {
-    console.log(`Backend đang chạy trên cổng ${PORT}`)
+    console.log(`Backend đang chạy trên cổng ${port}`)
 })
