@@ -1,0 +1,13 @@
+/**
+ * @file auth.routes.js
+ * @description Định nghĩa các điểm cuối (endpoints) cho module xác thực.
+ */
+
+import express from 'express';
+import * as authController from './auth.controller.js';
+
+const router = express.Router();
+
+router.post('/register', authController.register);
+
+export default router;

@@ -69,11 +69,10 @@ const UserSchema = new mongoose.Schema({
 UserSchema.pre('save', async function(next) {
     // Chỉ hash lại mk nếu nó bị thay đổi (hoặc tạo mới)
     if(!this.isModified('password'))
-        return next();
+        return;
 
     // Hash mk với độ phức tạp salt là 12
     this.password = await bcrypt.hash(this.password, 12);
-    next();
 })
 
 // Hàm so sánh mật khẩu (Instance Method)
