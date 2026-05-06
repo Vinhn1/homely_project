@@ -66,7 +66,7 @@ const UserSchema = new mongoose.Schema({
 
 
 // Hàm tự động Hash Mật Khẩu (Pre-save Middleware)
-UserSchema.pre('save', async function(next) {
+UserSchema.pre('save', async function() {
     // Chỉ hash lại mk nếu nó bị thay đổi (hoặc tạo mới)
     if(!this.isModified('password'))
         return;

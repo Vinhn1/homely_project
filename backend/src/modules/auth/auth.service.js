@@ -4,6 +4,7 @@
  */
 import User from './user.model.js';
 import AppError from '../../utils/appError.js';
+import { generateTokens } from '../../utils/tokenUtils.js';
 
 
 // REGISTER
@@ -32,3 +33,44 @@ export const register = async (userData) => {
     newUser.password = undefined;
     return newUser;
 }
+
+// LOGIN
+export const login = async (email, password) => {
+
+    // Kiểm tra client có gửi email và pass không
+    if(!email || !password){
+        throw new AppError("Vui lòng nhập email hoặc mật khẩu", 400);
+    }
+    
+    // Tìm user theo email
+    // .select('+password') vì field password đang bị ẩn
+    const existingUser = await User.findOne({email}).select('+password');
+
+    // Nếu không tìm thấy 
+    if(!existingUser){
+        throw new AppError("Địa chỉ email hoặc mật khẩu không chính xác!", 401);
+    }
+
+    // So sánh password nhập với pass ở db
+    const isPasswordCorrect = await existingUser.comparePassword(
+        password, 
+        existingUser.password
+    );
+
+    // Sai pass
+    if(!isPasswordCorrect){
+        throw new AppError("Địa chỉ email hoặc mật khẩu không chính xác", 401);
+    }
+
+    // Tạo access token và refresh token
+    const tokens = generateTokens(existingUser._id);
+
+    // Ẩn pass trước khi trả về client
+    existingUser.password = undefined;
+
+    // Trả về dữ liệu sau login
+    return {
+        user: existingUser,
+        ...tokens
+    };
+};
