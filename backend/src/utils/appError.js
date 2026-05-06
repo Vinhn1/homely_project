@@ -1,3 +1,4 @@
+// Chuẩn hóa toàn bộ lỗi trong hệ thống
 class AppError extends Error {
     constructor(message, statusCode) {
         // Gọi constructor của class Error
