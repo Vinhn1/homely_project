@@ -99,5 +99,18 @@ export const logout = async (userId, refreshToken) => {
 
 
 // GETME
+export const getMe = async (userId) => {
+    
+    // Tìm kiếm người dùng trong db theo Id
+    // Sử dụng .select() với dấu trừ (-) để loại trừ các trường không muốn lấy
+    const user = await User.findById(userId).select("-password -refreshTokens");
+
+    // Kiểm tra nếu không tìm thấy người dùng 
+    if(!user){
+        throw new AppError("Người dùng không tồn tại", 404)
+    }
+
+    return user; 
+}
 
 // FORGOTPASS
