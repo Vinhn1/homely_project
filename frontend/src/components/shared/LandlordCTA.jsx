@@ -45,44 +45,37 @@ export default function LandlordCTA() {
           ))}
         </div>
 
-        {/* CTA Banner */}
-        <div className="relative overflow-hidden bg-gradient-to-r from-[#1565C0] to-[#0d47a1] rounded-3xl p-8 md:p-12 flex flex-col md:flex-row items-center gap-8">
-          {/* Decorative circles */}
-          <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
-          <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
-
-          {/* Image */}
-          <div className="relative shrink-0 w-full md:w-72 h-52 rounded-2xl overflow-hidden">
-            <img
-              src="https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=600&auto=format&fit=crop&q=80"
-              alt="Chủ nhà"
-              className="w-full h-full object-cover"
-              loading="lazy"
-            />
-          </div>
-
+        {/* CTA Banner - Premium Design */}
+        <div className="relative overflow-hidden bg-[#1565C0] rounded-3xl p-10 md:p-14 flex items-center justify-between gap-10">
           {/* Content */}
-          <div className="relative text-white">
-            <span className="text-xs font-semibold bg-white/20 px-3 py-1 rounded-full backdrop-blur-sm">Dành cho chủ nhà</span>
-            <h2 className="text-2xl md:text-3xl font-bold mt-3 mb-3" style={{ fontFamily: 'Be Vietnam Pro, sans-serif' }}>
+          <div className="relative z-10 flex-1">
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4" style={{ fontFamily: 'Be Vietnam Pro, sans-serif' }}>
               Trở thành Chủ nhà uy tín
             </h2>
-            <p className="text-blue-100 text-sm leading-relaxed mb-6 max-w-md">
-              Đăng tin nhanh chóng, tiếp cận hàng ngàn người thuê tiềm năng mỗi ngày. Tận hưởng đặc quyền hiển thị ưu tiên dành cho thành viên Premium.
+            <p className="text-blue-100 text-sm md:text-base leading-relaxed mb-8 max-w-2xl">
+              Đăng tin nhanh chóng, tiếp cận hàng ngàn người thuê tiềm năng mỗi ngày.<br className="hidden md:block" />
+              Tận hưởng các đặc quyền hiển thị ưu tiên dành riêng cho thành viên Premium.
             </p>
-            <div className="flex flex-wrap gap-3">
-              <Link to="/register">
-                <Button className="bg-[#FFA726] hover:bg-[#FB8C00] text-white font-semibold gap-2">
-                  <ArrowUp className="w-4 h-4" />
-                  Đăng ký Premium ngay
-                </Button>
-              </Link>
-              <Link to="/huong-dan">
-                <Button variant="ghost" className="text-white hover:bg-white/10 border border-white/30">
-                  Tìm hiểu thêm →
-                </Button>
-              </Link>
+            <Link to="/register">
+              <button className="bg-[#FFA726] hover:bg-[#FB8C00] text-[#021f29] px-8 py-3.5 rounded-xl font-bold text-sm shadow-lg shadow-black/10 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200">
+                Đăng ký Premium ngay
+              </button>
+            </Link>
+          </div>
+
+          {/* Icon Section (Right) */}
+          <div className="hidden md:flex relative shrink-0">
+            <div className="w-32 h-32 md:w-40 md:h-40 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-sm border border-white/10">
+              <div className="w-16 h-16 md:w-20 md:h-20 text-[#FFA726]">
+                <svg viewBox="0 0 24 24" fill="currentColor" className="w-full h-full drop-shadow-lg">
+                  <path d="M6 3L3 8L12 22L21 8L18 3H6Z" />
+                  <path d="M6 3L12 8L18 3H6Z" fill="white" fillOpacity="0.2" />
+                  <path d="M3 8L12 8L12 22L3 8Z" fill="white" fillOpacity="0.1" />
+                </svg>
+              </div>
             </div>
+            {/* Soft Glow */}
+            <div className="absolute inset-0 bg-[#FFA726]/10 blur-3xl rounded-full" />
           </div>
         </div>
       </div>
