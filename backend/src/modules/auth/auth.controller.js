@@ -83,3 +83,22 @@ export const logout = catchAsync(async (req, res, next) => {
 
     res.status(200).json({ status: 'success', ...result });
 });
+
+
+// GETME
+export const getMe = catchAsync(async (req, res, next) => {
+    
+    // Lấy id người dùng từ req.user (được thiết lập từ middleware để bảo vệ)
+    const userId = req.user.id;
+
+    // Gọi logic xử lý tầng Service
+    const user = await authService.getMe(userId);
+
+    // Trả về phản hồi thành công cho frontend
+    res.status(200).json({
+        status: 'success',
+        data: {
+            user
+        }
+    });
+});
