@@ -44,6 +44,10 @@ const UserSchema = new mongoose.Schema({
         type: String,
         sparse: true,
     },
+    refreshToken: {
+        type: String,
+        
+    },
     // Trạng thái yêu cầu trở thành chủ nhà (null = chưa yêu cầu)
     ownerRequestStatus: {
         type: String,
