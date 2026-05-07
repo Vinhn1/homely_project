@@ -66,3 +66,20 @@ export const login = catchAsync(async (req, res, next) => {
 
 });
 
+
+// LOGOUT
+export const logout = catchAsync(async (req, res, next) => {
+    // Lấy refreshToken từ cookie
+    const { refreshToken } = req.cookies;
+
+    // Truyền cả userId và refreshToken vào service
+    const result = await authService.logout(req.user.id, refreshToken);
+
+    res.clearCookie('refreshToken', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'Strict'
+    });
+
+    res.status(200).json({ status: 'success', ...result });
+});

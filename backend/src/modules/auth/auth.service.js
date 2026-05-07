@@ -68,9 +68,36 @@ export const login = async (email, password) => {
     // Ẩn pass trước khi trả về client
     existingUser.password = undefined;
 
+    // Lưu refresh token vào db 
+    existingUser.refreshTokens.push(tokens.refreshToken);
+    // Lưu lại (dùng validateBeforeSave để bỏ qua các validate khác nếu cần)
+    await existingUser.save({
+        validateBeforeSave: false
+    })
+
     // Trả về dữ liệu sau login
     return {
         user: existingUser,
         ...tokens
     };
 };
+
+
+// LOGOUT
+export const logout = async (userId, refreshToken) => {
+    const existingUser = await User.findById(userId);
+    if(!existingUser) throw new AppError("User not found", 404);
+
+    // Dùng filter để giữ lại toàn bộ token TRỪ cái đang dùng để logout
+    existingUser.refreshTokens = existingUser.refreshTokens.filter(
+        token => token !== refreshToken
+    );
+
+    await existingUser.save({ validateBeforeSave: false });
+    return { message: "Đăng xuất thành công!" };
+}
+
+
+// GETME
+
+// FORGOTPASS
