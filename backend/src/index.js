@@ -5,6 +5,8 @@ import errorMiddleware from './middleware/errorMiddleware.js';
 import AppError from './utils/appError.js';
 import catchAsync from './utils/catchAsync.js';
 import authRouter from './modules/auth/auth.routes.js';
+import cors from 'cors';
+
 
 
 connectDB();
@@ -14,6 +16,11 @@ const app = express();
 app.use(express.json());
 
 const port = process.env.PORT || 3000;
+
+app.use(cors({
+    origin: 'http://localhost:5173',
+    credentials: true
+}))
 
 app.get('/', (req, res) => {
     res.send('Hello World!');
