@@ -13,6 +13,9 @@ router.post('/register', authController.register);
 
 router.post('/login', authController.login);
 
+// Không cần protect middleware vì service tự verify refreshToken từ cookie
+router.post('/refresh-token', authController.refreshToken);
+
 router.post('/logout', protect, authController.logout);
 
 router.get('/me', protect, authController.getMe);

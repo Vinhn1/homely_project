@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Eye, EyeOff, Mail, Lock, ArrowRight, CheckCircle2 } from 'lucide-react'
+import { Eye, EyeOff, Mail, Lock, ArrowRight, CheckCircle2, AlertCircle } from 'lucide-react'
 import { useAuthStore } from '@/store/useAuthStore'
 
 const FEATURES = [
@@ -19,8 +19,9 @@ export default function LoginPage() {
   // Hook để điều hướng người dùng sang các trang khác
   const navigate = useNavigate()
 
-  // Lấy hàm login từ store toàn cục (Zustand) để thực hiện xác thực
+  // Dùng 2 selector riêng biệt để tránh tạo object mới mỗi lần render (gây infinite loop)
   const login = useAuthStore((state) => state.login);
+  const authError = useAuthStore((state) => state.authError);
 
   // Hàm xử lý khi người dùng gõ vào input: tự động cập nhật trường tương ứng trong state 'form'
   const handleChange = (field) => (e) => setForm(f => ({ ...f, [field]: e.target.value }))
@@ -37,8 +38,7 @@ export default function LoginPage() {
       navigate('/');
 
     }catch(error){
-      console.error("Lỗi đăng nhập: ", error);
-
+      // Lỗi đã được lưu vào authError trong store, component tự render lại
     }finally{
       setLoading(false)
     }
@@ -192,6 +192,14 @@ export default function LoginPage() {
                 </button>
               </div>
             </div>
+
+            {/* Error Banner */}
+            {authError && (
+              <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{authError}</span>
+              </div>
+            )}
 
             {/* Submit */}
             <button

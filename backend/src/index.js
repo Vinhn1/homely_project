@@ -1,5 +1,6 @@
 import express from 'express';
 import 'dotenv/config';
+import cookieParser from 'cookie-parser';
 import { connectDB } from './config/db.js';
 import errorMiddleware from './middleware/errorMiddleware.js';
 import AppError from './utils/appError.js';
@@ -14,6 +15,8 @@ connectDB();
 const app = express();
 // Đọc dữ liệu json từ client gửi lên 
 app.use(express.json());
+// Parse cookie từ request header → req.cookies sẽ có giá trị
+app.use(cookieParser());
 
 const port = process.env.PORT || 3000;
 

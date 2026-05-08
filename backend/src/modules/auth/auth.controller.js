@@ -10,14 +10,16 @@ import ApiResponse from '../../utils/apiResponse.js';
 // REGISTER
 export const register = catchAsync(async (req, res, next) => {
     // 1. Lấy dữ liệu từ req.body
-    const { username, email, password, displayName } = req.body;
+    const { username, email, password, displayName, role, phone } = req.body;
     
     // 2. Gọi Service để thực hiện đăng ký
     const newUser = await authService.register({
         username,
         email,
         password,
-        displayName
+        displayName,
+        role,
+        phone
     });
 
     // 3. Trả về res thành công bằng ApiResponse
@@ -102,3 +104,22 @@ export const getMe = catchAsync(async (req, res, next) => {
         }
     });
 });
+
+
+// REFRESH TOKEN
+// Frontend gọi endpoint này khi app khởi động để lấy lại accessToken từ refreshToken cookie
+export const refreshToken = catchAsync(async (req, res, next) => {
+
+    // Đọc refreshToken từ httpOnly cookie (an toàn, JS không đọc được)
+    const { refreshToken } = req.cookies;
+
+    // Gọi service xử lý logic
+    const result = await authService.refreshToken(refreshToken);
+
+    // Trả về accessToken mới và thông tin user
+    return ApiResponse.success(res, 'Làm mới token thành công', {
+        accessToken: result.accessToken,
+        user: result.user
+    }, 200);
+});
+

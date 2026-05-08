@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import axios from 'axios';
 
-export const useAuthStore = create((set) => ({
+export const useAuthStore = create((set, get) => ({
 
     // ================================
     // STATE
@@ -18,6 +18,9 @@ export const useAuthStore = create((set) => ({
 
     // Trạng thái kiểm tra auth khi app khởi động
     isCheckingAuth: true,
+
+    // Lỗi đăng nhập (hiển thị trên UI)
+    authError: null,
 
 
     // ================================
@@ -43,19 +46,23 @@ export const useAuthStore = create((set) => ({
 
 
     // Kiểm tra người dùng còn đăng nhập hay không
-    // Chạy khi app khởi động
+    // Chạy khi app khởi động / reload trang
+    // Gọi /auth/refresh-token để dùng refreshToken cookie lấy lại accessToken mới
     checkAuth: async () => {
 
         try {
 
-            // Gọi API kiểm tra phiên đăng nhập
-            // Backend sẽ đọc refreshToken từ HttpOnly Cookie
-            const response = await axios.get('http://localhost:5000/api/v1/auth/me', { withCredentials: true });
+            // Gửi request — browser tự đính kèm refreshToken cookie nhờ withCredentials
+            const response = await axios.post(
+                'http://localhost:5000/api/v1/auth/refresh-token',
+                {},
+                { withCredentials: true }
+            );
 
-            // Lấy dữ liệu trả về từ backend
+            // Backend trả về { accessToken, user }
             const { accessToken, user } = response.data.data;
 
-            // Cập nhật auth state
+            // Khôi phục auth state đầy đủ
             set({
                 accessToken,
                 user,
@@ -64,8 +71,7 @@ export const useAuthStore = create((set) => ({
 
         } catch (error) {
 
-            // Nếu token không hợp lệ hoặc hết hạn
-            // Reset auth state
+            // refreshToken hết hạn hoặc không có → user thực sự chưa đăng nhập
             set({
                 accessToken: null,
                 user: null,
@@ -74,16 +80,16 @@ export const useAuthStore = create((set) => ({
 
         } finally {
 
-            // Dù thành công hay thất bại
-            // đều kết thúc trạng thái checking auth
-            set({
-                isCheckingAuth: false
-            });
+            // Dù thành công hay thất bại đều kết thúc trạng thái checking
+            set({ isCheckingAuth: false });
         }
     },
 
+
     // LOGIN
     login: async (data) => {
+        // Xóa lỗi cũ trước khi thử đăng nhập
+        set({ authError: null });
         try {
 
             const response = await axios.post(
@@ -94,12 +100,15 @@ export const useAuthStore = create((set) => ({
 
             const { accessToken, user } = response.data.data;
 
-            // Gọi lại action setAuth
-            get().setAuth({ accessToken, user });
+            // Gọi lại action setAuth và xóa lỗi
+            set({ accessToken, user, isAuthenticated: true, authError: null });
 
             return response.data;
 
         } catch (error) {
+            // Lưu thông báo lỗi vào state để UI hiển thị
+            const message = error.response?.data?.message || 'Đăng nhập thất bại. Vui lòng thử lại.';
+            set({ authError: message });
             throw error.response?.data || error;
         }
     },

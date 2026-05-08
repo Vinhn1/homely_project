@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import AppError from '../utils/appError';
+import AppError from '../utils/appError.js';
 
 /**
  * Middleware bảo vệ các route yêu cầu đăng nhập

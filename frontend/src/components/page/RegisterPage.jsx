@@ -38,39 +38,43 @@ export default function RegisterPage() {
   const handleChange = (field) => (e) => setForm(f => ({ ...f, [field]: e.target.value }))
 
   // LOGIC XỬ LÝ ĐĂNG KÝ
-const handleSubmit = async (e) => {
-  e.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-  // Kiểm tra confirm password
-  if (form.password !== form.confirmPassword) {
-    return alert("Mật khẩu xác nhận không khớp!");
-  }
+    // Kiểm tra confirm password
+    if (form.password !== form.confirmPassword) {
+      return alert("Mật khẩu xác nhận không khớp!");
+    }
 
-  // Bật loading
-  setLoading(true);
+    // Bật loading
+    setLoading(true);
 
-  try {
+    try {
 
-    // Gọi signup từ store
-    await signup({
-      ...form,
-      role
-    });
+      // Gọi signup từ store
+      await signup({
+        username: form.email,        // Lấy email làm username
+        email: form.email,
+        password: form.password,
+        displayName: form.fullName,  // Đổi tên từ fullName thành displayName
+        phone: form.phone,
+        role: role === 'tenant' ? 'user' : 'owner' // Chuyển tenant -> user, landlord -> owner
+      });
 
-    // Chuyển hướng sau khi đăng ký thành công
-    navigate("/");
+      // Chuyển hướng sau khi đăng ký thành công
+      navigate("/");
 
-  } catch (error) {
+    } catch (error) {
 
-    // Hiển thị lỗi backend
-    alert(error.message || "Đăng ký thất bại");
+      // Hiển thị lỗi backend
+      alert(error.message || "Đăng ký thất bại");
 
-  } finally {
+    } finally {
 
-    // Tắt loading
-    setLoading(false);
-  }
-};
+      // Tắt loading
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex" style={{ fontFamily: 'Be Vietnam Pro, sans-serif' }}>
@@ -89,7 +93,7 @@ const handleSubmit = async (e) => {
           <Link to="/" className="flex items-center gap-3 w-fit">
             <div className="w-10 h-10 bg-[#FFA726] rounded-xl flex items-center justify-center shadow-lg">
               <svg viewBox="0 0 24 24" fill="white" className="w-5 h-5">
-                <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+                <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
               </svg>
             </div>
             <span className="text-white text-2xl font-bold tracking-tight">TroTốt</span>
@@ -156,7 +160,7 @@ const handleSubmit = async (e) => {
           <div className="lg:hidden flex items-center gap-2 mb-8">
             <div className="w-9 h-9 bg-[#1565C0] rounded-xl flex items-center justify-center">
               <svg viewBox="0 0 24 24" fill="white" className="w-5 h-5">
-                <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+                <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
               </svg>
             </div>
             <span className="text-[#1565C0] text-xl font-bold">TroTốt</span>
@@ -173,11 +177,10 @@ const handleSubmit = async (e) => {
             <button
               type="button"
               onClick={() => setRole('tenant')}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl border-2 text-sm font-semibold transition-all duration-200 ${
-                role === 'tenant'
+              className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl border-2 text-sm font-semibold transition-all duration-200 ${role === 'tenant'
                   ? 'bg-[#1565C0] border-[#1565C0] text-white shadow-md shadow-[#1565C0]/30'
                   : 'bg-white border-gray-200 text-gray-500 hover:border-[#1565C0]/40'
-              }`}
+                }`}
             >
               <Search className="w-4 h-4" />
               Tìm phòng
@@ -185,11 +188,10 @@ const handleSubmit = async (e) => {
             <button
               type="button"
               onClick={() => setRole('landlord')}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl border-2 text-sm font-semibold transition-all duration-200 ${
-                role === 'landlord'
+              className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl border-2 text-sm font-semibold transition-all duration-200 ${role === 'landlord'
                   ? 'bg-[#1565C0] border-[#1565C0] text-white shadow-md shadow-[#1565C0]/30'
                   : 'bg-white border-gray-200 text-gray-500 hover:border-[#1565C0]/40'
-              }`}
+                }`}
             >
               <Building2 className="w-4 h-4" />
               Chủ nhà
@@ -338,10 +340,10 @@ const handleSubmit = async (e) => {
               className="h-11 bg-white border border-gray-200 rounded-xl flex items-center justify-center gap-2 text-sm font-medium text-gray-600 hover:border-gray-300 hover:shadow-sm transition-all active:scale-95"
             >
               <svg viewBox="0 0 24 24" className="w-4 h-4">
-                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
               </svg>
               Google
             </button>
@@ -350,7 +352,7 @@ const handleSubmit = async (e) => {
               className="h-11 bg-white border border-gray-200 rounded-xl flex items-center justify-center gap-2 text-sm font-medium text-gray-600 hover:border-gray-300 hover:shadow-sm transition-all active:scale-95"
             >
               <svg viewBox="0 0 24 24" fill="#1877F2" className="w-4 h-4">
-                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
               </svg>
               Facebook
             </button>
