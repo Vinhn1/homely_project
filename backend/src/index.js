@@ -6,6 +6,10 @@ import errorMiddleware from './middleware/errorMiddleware.js';
 import AppError from './utils/appError.js';
 import catchAsync from './utils/catchAsync.js';
 import authRouter from './modules/auth/auth.routes.js';
+import propertyRouter from './modules/property/property.routes.js';
+import categoryRouter from './modules/category/category.routes.js';
+import amenityRouter from './modules/amenity/amenity.routes.js';
+import districtRouter from './modules/district/district.routes.js';
 import cors from 'cors';
 
 
@@ -37,6 +41,10 @@ app.get('/test-error', catchAsync( async (req, res, next) => {
 }))
 
 app.use('/api/v1/auth', authRouter);
+app.use('/api/v1/properties', propertyRouter);
+app.use('/api/v1/categories', categoryRouter);
+app.use('/api/v1/amenities', amenityRouter);
+app.use('/api/v1/districts', districtRouter);
 
 
 app.use(errorMiddleware)

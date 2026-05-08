@@ -24,7 +24,7 @@ export const protect = async (req, res, next) => {
 
         // Giải mã và xác thực token 
         // jwt.verify sẽ trả về payload (dữ liệu chứa trong token) nếu thành công
-        const decodedPayload = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
+        const decodedPayload = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
 
         // Gán thông tin user đã giải mã vào req
         req.user = decodedPayload;
