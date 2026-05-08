@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, User, Mail, Lock, Phone, ArrowRight, Building2, Search } from 'lucide-react'
+import { useAuthStore } from '@/store/useAuthStore'
 
 const BENEFITS = {
   tenant: [
@@ -16,22 +17,60 @@ const BENEFITS = {
 }
 
 export default function RegisterPage() {
+  // Quản lý ẩn/hiện mật khẩu và mật khẩu xác nhận
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
+  // Phân loại người dùng: 'tenant' (người thuê) hoặc 'landlord' (chủ trọ)
   const [role, setRole] = useState('tenant')
+  // Trạng thái Loading khi đang xử lý đăng ký
   const [loading, setLoading] = useState(false)
+  // Object lưu trữ toàn bộ thông tin đăng ký của người dùng
   const [form, setForm] = useState({
     fullName: '', email: '', phone: '', password: '', confirmPassword: '',
   })
+
   const navigate = useNavigate()
 
+  // Lấy hàm signup từ authStore
+  const signup = useAuthStore((state) => state.signup);
+
+  // Hàm dùng chung để cập nhật các trường trong form
   const handleChange = (field) => (e) => setForm(f => ({ ...f, [field]: e.target.value }))
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    setLoading(true)
-    setTimeout(() => { setLoading(false); navigate('/login') }, 1000)
+  // LOGIC XỬ LÝ ĐĂNG KÝ
+const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  // Kiểm tra confirm password
+  if (form.password !== form.confirmPassword) {
+    return alert("Mật khẩu xác nhận không khớp!");
   }
+
+  // Bật loading
+  setLoading(true);
+
+  try {
+
+    // Gọi signup từ store
+    await signup({
+      ...form,
+      role
+    });
+
+    // Chuyển hướng sau khi đăng ký thành công
+    navigate("/");
+
+  } catch (error) {
+
+    // Hiển thị lỗi backend
+    alert(error.message || "Đăng ký thất bại");
+
+  } finally {
+
+    // Tắt loading
+    setLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen flex" style={{ fontFamily: 'Be Vietnam Pro, sans-serif' }}>

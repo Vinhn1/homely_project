@@ -6,7 +6,7 @@ import { useAuthStore } from '@/store/useAuthStore'
 
 export default function Navbar() {
   const [open, setOpen] = useState(false)
-  const { isAuthenticated, user, clearAuth } = useAuthStore()
+  const { isAuthenticated, user, logout } = useAuthStore()
   const navigate = useNavigate()
 
   // Hàm xử lý các hành động yêu cầu đăng nhập
@@ -55,47 +55,64 @@ export default function Navbar() {
 
         {/* ── Right Side: Actions ── */}
         <div className="flex items-center gap-2 sm:gap-4">
-          
+
           {/* Favorites */}
-          <button 
+          <button
             onClick={() => handleProtectedAction('/yeu-thich')}
             className="p-2 text-white hover:bg-white/10 rounded-full transition-colors relative"
           >
             <Heart className="w-5 h-5" />
             {isAuthenticated && (
-               <span className="absolute top-1 right-1 w-2 h-2 bg-[#FFA726] rounded-full border border-[#1565C0]" />
+              <span className="absolute top-1 right-1 w-2 h-2 bg-[#FFA726] rounded-full border border-[#1565C0]" />
             )}
           </button>
 
-          {/* Auth/User Profile */}
+          {/* Giao diện khi đã đăng nhập */}
+
+          {/* ── Auth/User Profile Section ── */}
           <div className="hidden sm:flex items-center border-l border-white/20 pl-4 ml-2 gap-3">
-            {!isAuthenticated ? (
-              <Link to="/login">
-                <Button variant="ghost" className="text-white hover:bg-white/10 font-medium h-10">
-                  Đăng nhập
-                </Button>
-              </Link>
-            ) : (
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 text-white">
-                  <div className="w-9 h-9 bg-[#FFA726] rounded-full flex items-center justify-center border-2 border-white/20">
-                    <UserIcon className="w-5 h-5" />
+            {isAuthenticated ? (
+              /* GIAO DIỆN KHI ĐÃ ĐĂNG NHẬP */
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 cursor-pointer group">
+                  <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center border border-white/30 group-hover:bg-white/30 transition-all">
+                    <UserIcon className="w-5 h-5 text-white" />
                   </div>
-                  <span className="hidden lg:inline-block text-sm font-semibold">{user?.fullName?.split(' ').pop()}</span>
+                  <div className="hidden md:block text-left">
+                    <p className="text-[10px] text-white/70 leading-none mb-1 uppercase tracking-wider">Thành viên</p>
+                    <p className="text-sm font-semibold text-white leading-none">{user?.fullName}</p>
+                  </div>
                 </div>
-                <Button 
-                  variant="ghost" 
-                  onClick={clearAuth}
-                  className="text-white hover:bg-red-500/20 p-2 rounded-full"
+
+                <button
+                  onClick={() => logout()}
+                  className="text-white/70 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-full"
+                  title="Đăng xuất"
                 >
                   <LogOut className="w-5 h-5" />
-                </Button>
+                </button>
+              </div>
+            ) : (
+              /* GIAO DIỆN KHI CHƯA ĐĂNG NHẬP */
+              <div className="flex items-center gap-2">
+                <Link to="/login">
+                  <Button variant="ghost" className="text-white hover:bg-white/10">
+                    Đăng nhập
+                  </Button>
+                </Link>
+                <Link to="/register">
+                  <Button className="bg-[#FFA726] hover:bg-[#FB8C00] text-white font-bold px-6 shadow-lg shadow-orange-900/20">
+                    Đăng ký
+                  </Button>
+                </Link>
               </div>
             )}
           </div>
 
+
+
           {/* Post Ad Button (Primary CTA) */}
-          <Button 
+          <Button
             onClick={() => handleProtectedAction('/dang-tin')}
             className="bg-[#FFA726] hover:bg-[#F57C00] text-white font-bold px-4 sm:px-6 rounded-xl shadow-lg shadow-[#FFA726]/20 flex items-center gap-2 h-10 sm:h-11 transform active:scale-95 transition-all"
           >
@@ -128,6 +145,7 @@ export default function Navbar() {
 
           <div className="flex flex-col gap-2">
             {!isAuthenticated ? (
+              /* MOBILE: CHƯA LOGIN */
               <div className="grid grid-cols-2 gap-3">
                 <Link to="/login" onClick={() => setOpen(false)}>
                   <Button variant="ghost" className="w-full text-white border border-white/30">Đăng nhập</Button>
@@ -137,19 +155,21 @@ export default function Navbar() {
                 </Link>
               </div>
             ) : (
+              /* MOBILE: ĐÃ LOGIN */
               <div className="bg-white/10 rounded-xl p-4 flex flex-col gap-4">
                 <div className="flex items-center gap-3 text-white">
                   <div className="w-12 h-12 bg-[#FFA726] rounded-full flex items-center justify-center">
                     <UserIcon className="w-6 h-6" />
                   </div>
-                  <div>
+                  <div className="text-left">
                     <p className="font-bold">{user?.fullName}</p>
                     <p className="text-xs text-blue-200">{user?.email}</p>
                   </div>
                 </div>
-                <Button 
-                  onClick={() => { clearAuth(); setOpen(false); }}
-                  className="w-full bg-red-500/20 hover:bg-red-500/40 text-white border border-red-500/30 font-semibold"
+                <Button
+                  variant="destructive"
+                  className="w-full bg-red-500 hover:bg-red-600"
+                  onClick={() => { logout(); setOpen(false); }}
                 >
                   Đăng xuất
                 </Button>

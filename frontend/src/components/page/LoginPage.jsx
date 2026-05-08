@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, Mail, Lock, ArrowRight, CheckCircle2 } from 'lucide-react'
+import { useAuthStore } from '@/store/useAuthStore'
 
 const FEATURES = [
   'Hàng nghìn phòng trọ đã được xác minh',
@@ -9,18 +10,39 @@ const FEATURES = [
 ]
 
 export default function LoginPage() {
+  // Quản lý việc ẩn/hiện mật khẩu (true: hiện, false: ẩn)
   const [showPassword, setShowPassword] = useState(false)
+  // Lưu trữ toàn bộ dữ liệu người dùng nhập vào form (email & pass)
   const [form, setForm] = useState({ email: '', password: '' })
+  // Trạng thái chờ Loading khi đang gửi yêu cầu lên server
   const [loading, setLoading] = useState(false)
+  // Hook để điều hướng người dùng sang các trang khác
   const navigate = useNavigate()
 
+  // Lấy hàm login từ store toàn cục (Zustand) để thực hiện xác thực
+  const login = useAuthStore((state) => state.login);
+
+  // Hàm xử lý khi người dùng gõ vào input: tự động cập nhật trường tương ứng trong state 'form'
   const handleChange = (field) => (e) => setForm(f => ({ ...f, [field]: e.target.value }))
 
+  // Khi người dùng click đăng nhập 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
-    // TODO: API call
-    setTimeout(() => { setLoading(false); navigate('/') }, 1000)
+    try{
+      // Gọi hàm login từ store
+      await login(form)
+
+      // Nếu không có lỗi, chuyển hướng về trang chủ
+      navigate('/');
+
+    }catch(error){
+      console.error("Lỗi đăng nhập: ", error);
+
+    }finally{
+      setLoading(false)
+    }
+
   }
 
   return (
