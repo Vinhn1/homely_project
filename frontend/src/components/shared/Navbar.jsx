@@ -44,16 +44,24 @@ export default function Navbar() {
         <div className="hidden md:flex flex-1 max-w-xl justify-center mx-4">
           {!isAuthenticated ? (
             /* 1. HIỂN THỊ SEARCH BAR KHI CHƯA LOGIN */
-            <div className="w-full relative group">
+            <form 
+              onSubmit={(e) => {
+                e.preventDefault();
+                const keyword = e.target.search.value;
+                navigate(`/tim-phong?keyword=${encodeURIComponent(keyword)}`);
+              }}
+              className="w-full relative group"
+            >
               <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#1565C0] transition-colors">
                 <Search className="w-4 h-4" />
               </div>
               <input
+                name="search"
                 type="text"
                 placeholder="Tìm phòng trọ, căn hộ, chung cư..."
                 className="w-full h-11 pl-11 pr-4 bg-white border-none rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#FFA726] shadow-inner transition-all"
               />
-            </div>
+            </form>
           ) : (
             /* 2. HIỂN THỊ MENU ITEMS KHI ĐÃ LOGIN */
             <nav className="flex items-center gap-8">

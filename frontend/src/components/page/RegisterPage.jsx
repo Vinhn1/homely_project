@@ -1,27 +1,19 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Eye, EyeOff, User, Mail, Lock, Phone, ArrowRight, Building2, Search } from 'lucide-react'
+import { Eye, EyeOff, User, Mail, Lock, Phone, ArrowRight } from 'lucide-react'
 import { useAuthStore } from '@/store/useAuthStore'
 
-const BENEFITS = {
-  tenant: [
-    { icon: '🔍', text: 'Tìm kiếm thông minh theo nhu cầu' },
-    { icon: '✅', text: 'Tin đăng đã xác minh chất lượng' },
-    { icon: '💬', text: 'Chat trực tiếp với chủ nhà' },
-  ],
-  landlord: [
-    { icon: '📢', text: 'Đăng tin miễn phí, tiếp cận ngay' },
-    { icon: '📊', text: 'Quản lý phòng trọ dễ dàng' },
-    { icon: '💰', text: 'Thu tiền thuê trực tuyến an toàn' },
-  ],
-}
+const BENEFITS = [
+  { icon: '🔍', text: 'Tìm kiếm thông minh theo nhu cầu' },
+  { icon: '✅', text: 'Tin đăng đã xác minh chất lượng' },
+  { icon: '💬', text: 'Chat trực tiếp với chủ nhà' },
+  { icon: '🏠', text: 'Quản lý phòng trọ dễ dàng' },
+]
 
 export default function RegisterPage() {
   // Quản lý ẩn/hiện mật khẩu và mật khẩu xác nhận
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
-  // Phân loại người dùng: 'tenant' (người thuê) hoặc 'landlord' (chủ trọ)
-  const [role, setRole] = useState('tenant')
   // Trạng thái Loading khi đang xử lý đăng ký
   const [loading, setLoading] = useState(false)
   // Object lưu trữ toàn bộ thông tin đăng ký của người dùng
@@ -50,7 +42,6 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-
       // Gọi signup từ store
       await signup({
         username: form.email,        // Lấy email làm username
@@ -58,19 +49,17 @@ export default function RegisterPage() {
         password: form.password,
         displayName: form.fullName,  // Đổi tên từ fullName thành displayName
         phone: form.phone,
-        role: role === 'tenant' ? 'user' : 'owner' // Chuyển tenant -> user, landlord -> owner
+        role: 'user'                 // Mặc định là user
       });
 
       // Chuyển hướng sau khi đăng ký thành công
       navigate("/");
 
     } catch (error) {
-
       // Hiển thị lỗi backend
       alert(error.message || "Đăng ký thất bại");
 
     } finally {
-
       // Tắt loading
       setLoading(false);
     }
@@ -99,29 +88,23 @@ export default function RegisterPage() {
             <span className="text-white text-2xl font-bold tracking-tight">TroTốt</span>
           </Link>
 
-          {/* Role-specific content */}
+          {/* Unified content */}
           <div className="flex-1 flex flex-col justify-center">
             <div className="mb-2">
               <span className="inline-block bg-[#FFA726]/20 text-[#FFA726] text-xs font-semibold px-3 py-1.5 rounded-full border border-[#FFA726]/30 mb-5">
-                {role === 'tenant' ? '🔍 Dành cho người tìm phòng' : '🏠 Dành cho chủ nhà'}
+                🌟 Nền tảng thuê phòng tin cậy
               </span>
             </div>
             <h2 className="text-3xl xl:text-4xl font-bold text-white leading-tight mb-3">
-              {role === 'tenant' ? (
-                <>Tìm phòng trọ<br /><span className="text-[#FFA726]">nhanh & tin cậy</span></>
-              ) : (
-                <>Cho thuê phòng<br /><span className="text-[#FFA726]">hiệu quả hơn</ span></>
-              )}
+              Tìm phòng trọ & Cho thuê<br /><span className="text-[#FFA726]">nhanh & hiệu quả</span>
             </h2>
             <p className="text-blue-100 text-base leading-relaxed mb-8 max-w-xs">
-              {role === 'tenant'
-                ? 'Hàng nghìn phòng trọ, căn hộ đã xác minh tại các thành phố lớn Việt Nam.'
-                : 'Đăng tin, quản lý và thu tiền thuê — tất cả trên một nền tảng.'}
+              Hàng nghìn phòng trọ, căn hộ đã xác minh và công cụ quản lý chuyên nghiệp cho chủ nhà.
             </p>
 
             {/* Benefits */}
             <ul className="space-y-4">
-              {BENEFITS[role].map((b) => (
+              {BENEFITS.map((b) => (
                 <li key={b.text} className="flex items-center gap-3 group">
                   <div className="w-9 h-9 bg-white/10 rounded-xl flex items-center justify-center text-lg group-hover:bg-[#FFA726]/20 transition-colors">
                     {b.icon}
@@ -167,35 +150,9 @@ export default function RegisterPage() {
           </div>
 
           {/* Heading */}
-          <div className="mb-6">
+          <div className="mb-8">
             <h2 className="text-3xl font-bold text-[#021f29] mb-1">Tạo tài khoản</h2>
             <p className="text-gray-500 text-sm">Tham gia nền tảng thuê phòng tin cậy</p>
-          </div>
-
-          {/* Role Toggle */}
-          <div className="flex gap-3 mb-6">
-            <button
-              type="button"
-              onClick={() => setRole('tenant')}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl border-2 text-sm font-semibold transition-all duration-200 ${role === 'tenant'
-                  ? 'bg-[#1565C0] border-[#1565C0] text-white shadow-md shadow-[#1565C0]/30'
-                  : 'bg-white border-gray-200 text-gray-500 hover:border-[#1565C0]/40'
-                }`}
-            >
-              <Search className="w-4 h-4" />
-              Tìm phòng
-            </button>
-            <button
-              type="button"
-              onClick={() => setRole('landlord')}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl border-2 text-sm font-semibold transition-all duration-200 ${role === 'landlord'
-                  ? 'bg-[#1565C0] border-[#1565C0] text-white shadow-md shadow-[#1565C0]/30'
-                  : 'bg-white border-gray-200 text-gray-500 hover:border-[#1565C0]/40'
-                }`}
-            >
-              <Building2 className="w-4 h-4" />
-              Chủ nhà
-            </button>
           </div>
 
           {/* Form */}

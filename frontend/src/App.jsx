@@ -5,6 +5,10 @@ import RegisterPage from './components/page/RegisterPage'
 import { useAuthStore } from './store/useAuthStore'
 import { useEffect } from 'react'
 import PublicRoute from './components/auth/PublicRoute'
+import ProtectedRoute from './components/auth/ProtectedRoute'
+import ListPropertyPage from './components/page/ListPropertyPage'
+import PropertyDetailsPage from './components/page/PropertyDetailsPage'
+import SearchListingPage from './components/page/SearchListingPage'
 
 function App() {
 
@@ -44,6 +48,15 @@ function App() {
             <RegisterPage />
           </PublicRoute>
         } />
+
+        <Route path="/dang-tin" element={
+          <ProtectedRoute>
+            <ListPropertyPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/tim-phong" element={<SearchListingPage />} />
+        <Route path="/property/:id" element={<PropertyDetailsPage />} />
 
       </Routes>
     </BrowserRouter>
