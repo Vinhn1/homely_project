@@ -28,6 +28,14 @@ const httpServer = createServer(app);
 
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 
+app.use(cors({
+    origin: [FRONTEND_URL, 'http://localhost:5173', 'http://127.0.0.1:5173'],
+    credentials: true
+}));
+
+app.use(express.json());
+app.use(cookieParser());
+
 // Socket.io setup
 const io = new Server(httpServer, {
     cors: {
@@ -78,15 +86,7 @@ io.on('connection', (socket) => {
 });
 
 // Middlewares
-app.use(express.json());
-app.use(cookieParser());
-
 const port = process.env.PORT || 5000;
-
-app.use(cors({
-    origin: [FRONTEND_URL, 'http://127.0.0.1:5173'],
-    credentials: true
-}));
 
 app.get('/', (req, res) => {
     res.send('TroTốt API is running!');
