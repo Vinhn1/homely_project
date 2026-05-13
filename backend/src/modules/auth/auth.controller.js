@@ -6,24 +6,26 @@
 import * as authService from './auth.service.js';
 import catchAsync from '../../utils/catchAsync.js';
 import ApiResponse from '../../utils/apiResponse.js';
+import AppError from '../../utils/appError.js';
 
 // REGISTER
 export const register = catchAsync(async (req, res, next) => {
     // 1. Lấy dữ liệu từ req.body
-    const { username, email, password, displayName, role, phone } = req.body;
+    const { username, email, password, displayName, phone } = req.body;
     
     // 2. Gọi Service để thực hiện đăng ký
-    const newUser = await authService.register({
+    const result = await authService.register({
         username,
         email,
         password,
         displayName,
-        role,
         phone
     });
 
     // 3. Trả về res thành công bằng ApiResponse
-    ApiResponse.success(res, "Đăng ký thành công!", newUser, 201); 
+    ApiResponse.success(res, "Đăng ký thành công! Vui lòng đăng nhập để tiếp tục.", {
+        user: result.user
+    }, 201); 
 })
 
 
@@ -121,5 +123,48 @@ export const refreshToken = catchAsync(async (req, res, next) => {
         accessToken: result.accessToken,
         user: result.user
     }, 200);
+});
+ 
+// UPDATE PROFILE
+export const updateProfile = catchAsync(async (req, res, next) => {
+    const userId = req.user.id;
+    const updateData = req.body;
+
+    const updatedUser = await authService.updateProfile(userId, updateData);
+
+    return ApiResponse.success(res, 'Cập nhật hồ sơ thành công', {
+        user: updatedUser
+    }, 200);
+});
+
+// UPDATE AVATAR
+export const updateAvatar = catchAsync(async (req, res, next) => {
+    if (!req.file) {
+        return next(new AppError('Vui lòng chọn ảnh để tải lên', 400));
+    }
+
+    const userId = req.user.id;
+    const avatarUrl = req.file.path; // Cloudinary URL
+
+    const updatedUser = await authService.updateProfile(userId, { avatarUrl });
+
+    return ApiResponse.success(res, 'Cập nhật ảnh đại diện thành công', {
+        user: updatedUser
+    }, 200);
+});
+
+// DELETE ACCOUNT
+export const deleteAccount = catchAsync(async (req, res, next) => {
+    const userId = req.user.id;
+    await authService.deleteAccount(userId);
+    
+    // Xóa cookie refreshToken
+    res.clearCookie('refreshToken', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict'
+    });
+
+    return ApiResponse.success(res, 'Xóa tài khoản thành công', null, 200);
 });
 

@@ -1,7 +1,10 @@
-import { Link } from 'react-router-dom'
-import { MapPin, Star, Heart, Maximize2 } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
+import { MapPin, Star, Maximize2, Heart } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { useAuthStore } from '@/store/useAuthStore'
+import { useWishlistStore } from '@/store/useWishlistStore'
+import { toast } from 'sonner'
 
 function Stars({ rating, count }) {
   return (
@@ -17,6 +20,25 @@ function Stars({ rating, count }) {
 }
 
 export default function PropertyCard({ property }) {
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuthStore();
+  const { toggle, isSaved } = useWishlistStore();
+
+  const handleToggleWishlist = async (e) => {
+    e.stopPropagation();
+    if (!isAuthenticated) {
+      toast.error('Vui lòng đăng nhập để lưu tin');
+      navigate(`/login?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`);
+      return;
+    }
+    await toggle(property._id);
+  };
+
+  const handleDetailsClick = (e) => {
+    e.preventDefault();
+    navigate(`/property/${property._id}`);
+  };
+
   const formatPrice = (price) => {
     if (!price) return 'Liên hệ';
     if (price >= 1000000) {
@@ -32,7 +54,10 @@ export default function PropertyCard({ property }) {
   return (
     <Card className="group overflow-hidden border-0 shadow-[0_2px_12px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.14)] transition-shadow duration-300 rounded-2xl p-0 h-full flex flex-col">
       {/* Image */}
-      <div className="relative overflow-hidden h-52 shrink-0">
+      <div 
+        onClick={handleDetailsClick}
+        className="relative overflow-hidden h-52 shrink-0 cursor-pointer"
+      >
         <img 
           src={mainImage} 
           alt={property.title} 
@@ -46,18 +71,29 @@ export default function PropertyCard({ property }) {
         </span>
 
         {/* New badge */}
-        <span className="absolute top-3 right-10 bg-green-500 text-white text-[10px] font-bold px-2 py-1 rounded-lg flex items-center gap-1 shadow-lg">
+        <span className="absolute top-3 right-3 bg-green-500 text-white text-[10px] font-bold px-2 py-1 rounded-lg flex items-center gap-1 shadow-lg">
           <Star className="w-3 h-3 fill-white" /> Tin mới
         </span>
 
-        {/* Heart */}
-        <button className="absolute top-3 right-3 w-7 h-7 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white transition-colors shadow-md">
-          <Heart className="w-4 h-4 text-gray-400 hover:text-red-500 transition-colors" />
+        {/* Favorite button overlay */}
+        <button 
+          onClick={handleToggleWishlist}
+          className={`absolute bottom-3 right-3 p-2.5 rounded-full shadow-lg transition-all z-10 group/heart ${
+            isSaved(property._id) 
+              ? 'bg-red-50 text-red-500' 
+              : 'bg-white/90 text-gray-400 hover:text-red-500'
+          }`}
+          title={isSaved(property._id) ? 'Bỏ yêu thích' : 'Thêm vào yêu thích'}
+        >
+          <Heart className={`w-4 h-4 transition-all ${isSaved(property._id) ? 'fill-red-500' : 'group-hover/heart:fill-red-500'}`} />
         </button>
       </div>
 
       <CardContent className="p-4 flex-1 flex flex-col">
-        <h3 className="font-bold text-[#021f29] text-[15px] leading-snug mb-2 line-clamp-2 group-hover:text-[#1565C0] transition-colors min-h-[40px]">
+        <h3 
+          onClick={handleDetailsClick}
+          className="font-bold text-[#021f29] text-[15px] leading-snug mb-2 line-clamp-2 group-hover:text-[#1565C0] transition-colors min-h-[40px] cursor-pointer"
+        >
           {property.title}
         </h3>
 
@@ -88,11 +124,13 @@ export default function PropertyCard({ property }) {
             <span className="text-lg font-black text-[#1565C0]">{formatPrice(property.price)}</span>
             <span className="text-[10px] text-gray-400 ml-1 font-medium">/tháng</span>
           </div>
-          <Link to={`/property/${property._id}`}>
-            <Button size="sm" className="bg-[#1565C0] hover:bg-[#0d47a1] text-white text-xs h-9 px-4 rounded-xl font-bold shadow-md shadow-blue-900/10">
-              Chi tiết
-            </Button>
-          </Link>
+          <Button 
+            size="sm" 
+            onClick={handleDetailsClick}
+            className="bg-[#1565C0] hover:bg-[#0d47a1] text-white text-xs h-9 px-4 rounded-xl font-bold shadow-md shadow-blue-900/10"
+          >
+            Chi tiết
+          </Button>
         </div>
       </CardContent>
     </Card>

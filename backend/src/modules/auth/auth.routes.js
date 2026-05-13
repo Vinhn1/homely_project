@@ -6,6 +6,7 @@
 import express from 'express';
 import * as authController from './auth.controller.js';
 import { protect } from '../../middleware/auth.middleware.js';
+import { uploadAvatar } from '../../middleware/upload.middleware.js';
 
 const router = express.Router();
 
@@ -19,6 +20,10 @@ router.post('/refresh-token', authController.refreshToken);
 router.post('/logout', protect, authController.logout);
 
 router.get('/me', protect, authController.getMe);
+
+router.patch('/update-profile', protect, authController.updateProfile);
+router.post('/update-avatar', protect, uploadAvatar, authController.updateAvatar);
+router.delete('/delete-account', protect, authController.deleteAccount);
 
 
 export default router;

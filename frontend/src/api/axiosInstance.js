@@ -62,7 +62,7 @@ axiosInstance.interceptors.response.use(
 
                 // Gọi API refresh token
                 const response = await axios.post(
-                    `${import.meta.env.VITE_API_URL}/auth/refresh`,
+                    `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1'}/auth/refresh-token`,
                     {},
                     {
                         withCredentials: true

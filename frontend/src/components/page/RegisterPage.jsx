@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Eye, EyeOff, User, Mail, Lock, Phone, ArrowRight } from 'lucide-react'
 import { useAuthStore } from '@/store/useAuthStore'
+import { toast } from 'sonner'
 
 const BENEFITS = [
   { icon: '🔍', text: 'Tìm kiếm thông minh theo nhu cầu' },
@@ -22,6 +23,8 @@ export default function RegisterPage() {
   })
 
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams();
+  const redirectPath = searchParams.get('redirect');
 
   // Lấy hàm signup từ authStore
   const signup = useAuthStore((state) => state.signup);
@@ -35,10 +38,11 @@ export default function RegisterPage() {
 
     // Kiểm tra confirm password
     if (form.password !== form.confirmPassword) {
-      return alert("Mật khẩu xác nhận không khớp!");
+      return toast.error("Mật khẩu xác nhận không khớp!");
     }
 
     // Bật loading
+    const toastId = toast.loading("Đang tạo tài khoản...");
     setLoading(true);
 
     try {
@@ -52,12 +56,15 @@ export default function RegisterPage() {
         role: 'user'                 // Mặc định là user
       });
 
-      // Chuyển hướng sau khi đăng ký thành công
-      navigate("/");
+      toast.success("Đăng ký thành công! Vui lòng đăng nhập.", { id: toastId });
+      
+      // Chuyển hướng sang trang đăng nhập thay vì trang chủ, kèm theo redirect nếu có
+      const loginPath = redirectPath ? `/login?redirect=${encodeURIComponent(redirectPath)}` : "/login";
+      navigate(loginPath);
 
     } catch (error) {
       // Hiển thị lỗi backend
-      alert(error.message || "Đăng ký thất bại");
+      toast.error(error.message || "Đăng ký thất bại", { id: toastId });
 
     } finally {
       // Tắt loading
@@ -318,7 +325,10 @@ export default function RegisterPage() {
           {/* Login link */}
           <p className="text-center text-sm text-gray-500 mt-6">
             Đã có tài khoản?{' '}
-            <Link to="/login" className="text-[#1565C0] font-semibold hover:underline">
+            <Link 
+              to={redirectPath ? `/login?redirect=${encodeURIComponent(redirectPath)}` : "/login"} 
+              className="text-[#1565C0] font-semibold hover:underline"
+            >
               Đăng nhập ngay
             </Link>
           </p>

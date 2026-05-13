@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Eye, EyeOff, Mail, Lock, ArrowRight, CheckCircle2, AlertCircle } from 'lucide-react'
 import { useAuthStore } from '@/store/useAuthStore'
 
@@ -18,6 +18,8 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   // Hook để điều hướng người dùng sang các trang khác
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams();
+  const redirectPath = searchParams.get('redirect') || '/';
 
   // Dùng 2 selector riêng biệt để tránh tạo object mới mỗi lần render (gây infinite loop)
   const login = useAuthStore((state) => state.login);
@@ -34,8 +36,8 @@ export default function LoginPage() {
       // Gọi hàm login từ store
       await login(form)
 
-      // Nếu không có lỗi, chuyển hướng về trang chủ
-      navigate('/');
+      // Nếu không có lỗi, chuyển hướng về trang yêu cầu hoặc trang chủ
+      navigate(redirectPath);
 
     }catch(error){
       // Lỗi đã được lưu vào authError trong store, component tự render lại
@@ -244,7 +246,10 @@ export default function LoginPage() {
           {/* Register link */}
           <p className="text-center text-sm text-gray-500 mt-8">
             Chưa có tài khoản?{' '}
-            <Link to="/register" className="text-[#1565C0] font-semibold hover:underline">
+            <Link 
+              to={redirectPath && redirectPath !== '/' ? `/register?redirect=${encodeURIComponent(redirectPath)}` : "/register"} 
+              className="text-[#1565C0] font-semibold hover:underline"
+            >
               Đăng ký miễn phí
             </Link>
           </p>

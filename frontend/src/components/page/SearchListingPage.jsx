@@ -13,6 +13,8 @@ import {
   SlidersHorizontal
 } from 'lucide-react'
 import { usePropertyStore } from '@/store/usePropertyStore'
+import { useAuthStore } from '@/store/useAuthStore'
+import { useWishlistStore } from '@/store/useWishlistStore'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import PropertyCard from '@/components/shared/PropertyCard'
@@ -27,8 +29,11 @@ export default function SearchListingPage() {
     districts, 
     fetchProperties, 
     fetchMetadata, 
-    loading 
+    loading,
+    pagination
   } = usePropertyStore()
+  const { isAuthenticated } = useAuthStore()
+  const { fetchWishlist } = useWishlistStore()
 
   // Local filter state
   const [filters, setFilters] = useState({
@@ -38,13 +43,18 @@ export default function SearchListingPage() {
     minPrice: searchParams.get('minPrice') || '',
     maxPrice: searchParams.get('maxPrice') || '',
     minArea: searchParams.get('minArea') || '',
+    sort: searchParams.get('sort') || '-createdAt',
+    page: parseInt(searchParams.get('page')) || 1,
   })
 
   const [showMobileFilters, setShowMobileFilters] = useState(false)
 
   useEffect(() => {
     fetchMetadata()
-  }, [fetchMetadata])
+    if (isAuthenticated) {
+      fetchWishlist()
+    }
+  }, [fetchMetadata, fetchWishlist, isAuthenticated])
 
   const handleFetch = useCallback(() => {
     const params = {}
@@ -54,6 +64,8 @@ export default function SearchListingPage() {
     if (filters.minPrice) params.minPrice = filters.minPrice
     if (filters.maxPrice) params.maxPrice = filters.maxPrice
     if (filters.minArea) params.minArea = filters.minArea
+    if (filters.sort) params.sort = filters.sort
+    if (filters.page) params.page = filters.page
     
     fetchProperties(params)
     setSearchParams(params)
@@ -75,10 +87,17 @@ export default function SearchListingPage() {
       minPrice: '',
       maxPrice: '',
       minArea: '',
+      sort: '-createdAt',
+      page: 1,
     }
     setFilters(cleared)
     fetchProperties({})
     setSearchParams({})
+  }
+
+  const handlePageChange = (newPage) => {
+    updateFilter('page', newPage)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   return (
@@ -233,7 +252,7 @@ export default function SearchListingPage() {
             {/* Top bar results info */}
             <div className="bg-white rounded-2xl p-4 px-6 flex flex-wrap items-center justify-between gap-4 shadow-sm border border-gray-100">
               <div className="flex items-center gap-3">
-                <span className="font-bold text-[#021f29]">Tìm thấy {properties.length} kết quả</span>
+                <span className="font-bold text-[#021f29]">Tìm thấy {pagination.total || 0} kết quả</span>
                 {Object.values(filters).some(v => v !== '') && (
                   <div className="hidden md:flex gap-2">
                     <div className="w-[1px] h-4 bg-gray-200 mx-1"></div>
@@ -254,10 +273,15 @@ export default function SearchListingPage() {
                 
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-bold text-gray-400 uppercase tracking-widest hidden sm:block">Sắp xếp:</span>
-                  <select className="text-sm font-bold text-[#1565C0] bg-transparent outline-none cursor-pointer">
-                    <option>Mới nhất</option>
-                    <option>Giá thấp đến cao</option>
-                    <option>Giá cao đến thấp</option>
+                  <select 
+                    className="text-sm font-bold text-[#1565C0] bg-transparent outline-none cursor-pointer"
+                    value={filters.sort}
+                    onChange={(e) => updateFilter('sort', e.target.value)}
+                  >
+                    <option value="-createdAt">Mới nhất</option>
+                    <option value="price-asc">Giá thấp đến cao</option>
+                    <option value="price-desc">Giá cao đến thấp</option>
+                    <option value="oldest">Cũ nhất</option>
                   </select>
                 </div>
               </div>
@@ -294,13 +318,54 @@ export default function SearchListingPage() {
               </div>
             )}
 
-            {/* Pagination Placeholder */}
-            {properties.length > 0 && (
+            {/* Pagination */}
+            {pagination.totalPages > 1 && (
               <div className="flex justify-center pt-10">
                 <div className="flex gap-2">
-                  <Button variant="outline" className="w-10 h-10 p-0 rounded-xl border-gray-200 font-bold" disabled>1</Button>
-                  <Button variant="ghost" className="w-10 h-10 p-0 rounded-xl font-bold">2</Button>
-                  <Button variant="ghost" className="w-10 h-10 p-0 rounded-xl font-bold">3</Button>
+                  <Button 
+                    variant="outline" 
+                    className="w-10 h-10 p-0 rounded-xl border-gray-200 font-bold disabled:opacity-50"
+                    onClick={() => handlePageChange(pagination.page - 1)}
+                    disabled={pagination.page === 1}
+                  >
+                    <ChevronDown className="w-4 h-4 rotate-90" />
+                  </Button>
+                  
+                  {[...Array(pagination.totalPages)].map((_, idx) => {
+                    const pageNum = idx + 1;
+                    // Only show current page, 1, last page, and neighbors
+                    if (
+                      pageNum === 1 || 
+                      pageNum === pagination.totalPages || 
+                      (pageNum >= pagination.page - 1 && pageNum <= pagination.page + 1)
+                    ) {
+                      return (
+                        <Button 
+                          key={pageNum}
+                          variant={pagination.page === pageNum ? "default" : "outline"}
+                          className={`w-10 h-10 p-0 rounded-xl font-bold ${pagination.page === pageNum ? 'bg-[#1565C0]' : 'border-gray-200'}`}
+                          onClick={() => handlePageChange(pageNum)}
+                        >
+                          {pageNum}
+                        </Button>
+                      );
+                    } else if (
+                      pageNum === pagination.page - 2 || 
+                      pageNum === pagination.page + 2
+                    ) {
+                      return <span key={pageNum} className="flex items-center justify-center w-10 text-gray-400">...</span>;
+                    }
+                    return null;
+                  })}
+
+                  <Button 
+                    variant="outline" 
+                    className="w-10 h-10 p-0 rounded-xl border-gray-200 font-bold disabled:opacity-50"
+                    onClick={() => handlePageChange(pagination.page + 1)}
+                    disabled={pagination.page === pagination.totalPages}
+                  >
+                    <ChevronDown className="w-4 h-4 -rotate-90" />
+                  </Button>
                 </div>
               </div>
             )}

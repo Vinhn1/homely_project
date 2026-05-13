@@ -30,9 +30,11 @@ export const register = async (userData) => {
     const newUser = await User.create(userData);
 
     // 4. Return user mới (thêm xử lý không lộ pass)
-    //  Xóa password khỏi object trước khi trả về (bảo mật)
     newUser.password = undefined;
-    return newUser;
+    
+    return {
+        user: newUser
+    };
 }
 
 // LOGIN
@@ -50,6 +52,10 @@ export const login = async (email, password) => {
     // Nếu không tìm thấy 
     if (!existingUser) {
         throw new AppError("Địa chỉ email hoặc mật khẩu không chính xác!", 401);
+    }
+
+    if (existingUser.isBanned) {
+        throw new AppError(existingUser.banReason || 'Tài khoản của bạn đã bị khóa.', 403);
     }
 
     // So sánh password nhập với pass ở db
@@ -113,6 +119,10 @@ export const getMe = async (userId) => {
         throw new AppError("Người dùng không tồn tại", 404)
     }
 
+    if (user.isBanned) {
+        throw new AppError(user.banReason || 'Tài khoản của bạn đã bị khóa.', 403);
+    }
+
     return user;
 }
 
@@ -143,9 +153,51 @@ export const refreshToken = async (token) => {
         throw new AppError('Phiên đăng nhập không hợp lệ', 401);
     }
 
+    if (user.isBanned) {
+        throw new AppError(user.banReason || 'Tài khoản của bạn đã bị khóa.', 403);
+    }
+
     // Tạo access token mới
     const { accessToken } = generateTokens(user._id);
 
     return { accessToken, user };
 }
-
+
+// UPDATE PROFILE
+export const updateProfile = async (userId, updateData) => {
+    // Chỉ cho phép update 1 số trường nhất định
+    const allowedFields = ['displayName', 'phone', 'bio', 'avatarUrl'];
+    const filteredData = {};
+
+    Object.keys(updateData).forEach(key => {
+        if (allowedFields.includes(key)) {
+            filteredData[key] = updateData[key];
+        }
+    });
+
+    // Tìm và update
+    const updatedUser = await User.findByIdAndUpdate(
+        userId,
+        filteredData,
+        {
+            new: true, // Trả về doc sau khi update
+            runValidators: true // Chạy lại validate của model
+        }
+    ).select('-password -refreshTokens');
+
+    if (!updatedUser) {
+        throw new AppError('Không tìm thấy người dùng', 404);
+    }
+
+    return updatedUser;
+}
+
+// DELETE ACCOUNT
+export const deleteAccount = async (userId) => {
+    const user = await User.findByIdAndDelete(userId);
+    if (!user) {
+        throw new AppError('Không tìm thấy người dùng', 404);
+    }
+    return user;
+}
+

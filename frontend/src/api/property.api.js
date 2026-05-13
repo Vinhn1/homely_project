@@ -14,6 +14,7 @@ export const propertyApi = {
         },
     }),
     deleteProperty: (id) => axiosInstance.delete(`/properties/${id}`),
+    getMyProperties: (params) => axiosInstance.get("/properties/user/my-listings", { params }),
     
     // Metadata
     getCategories: () => axiosInstance.get("/categories"),

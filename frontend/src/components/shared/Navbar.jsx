@@ -1,20 +1,34 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Menu, X, Home, LogOut, User as UserIcon, Search, MapPin, Heart, PlusCircle, MessageCircle, Bell, BookOpen, HelpCircle } from 'lucide-react'
+import { Menu, X, Home, LogOut, User as UserIcon, Search, MapPin, PlusCircle, MessageCircle, Bell, BookOpen, HelpCircle, Heart, LayoutDashboard } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAuthStore } from '@/store/useAuthStore'
+import { useChatStore } from '@/store/useChatStore'
+import { useNotificationStore } from '@/store/useNotificationStore'
+import { useWishlistStore } from '@/store/useWishlistStore'
+import { useEffect } from 'react'
 
 export default function Navbar() {
   const [open, setOpen] = useState(false)
   const { isAuthenticated, user, logout } = useAuthStore()
+  const { wishlist, fetchWishlist } = useWishlistStore()
+  const chatUnreadCount = useChatStore(state => state.unreadCount)
+  const notificationUnreadCount = useNotificationStore(state => state.unreadCount)
   const navigate = useNavigate()
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchWishlist();
+    }
+  }, [isAuthenticated, fetchWishlist]);
 
   // Hàm xử lý các hành động yêu cầu đăng nhập
   const handleProtectedAction = (path) => {
     if (isAuthenticated) {
       navigate(path)
     } else {
-      navigate('/login')
+      // Truyền tham số redirect để sau khi login xong quay lại đúng trang cũ
+      navigate(`/login?redirect=${encodeURIComponent(path)}`)
     }
   }
 
@@ -41,77 +55,90 @@ export default function Navbar() {
         </div>
 
         {/* ── Center Area: Conditional Rendering ── */}
-        <div className="hidden md:flex flex-1 max-w-xl justify-center mx-4">
+        <div className="hidden md:flex flex-1 max-w-xl justify-center mx-4 items-center gap-6">
+          {/* Always visible links */}
+          <nav className="flex items-center gap-6">
+            <Link
+              to="/tim-phong"
+              className="flex items-center gap-1.5 text-white/80 hover:text-white text-sm font-medium transition-all hover:scale-105"
+            >
+              <Search className="w-4 h-4" />
+              Tìm phòng
+            </Link>
+            <Link
+              to="/tin-tuc"
+              className="flex items-center gap-1.5 text-white/80 hover:text-white text-sm font-medium transition-all hover:scale-105"
+            >
+              <BookOpen className="w-4 h-4" />
+              Tin tức
+            </Link>
+            <Link
+              to="/huong-dan"
+              className="flex items-center gap-1.5 text-white/80 hover:text-white text-sm font-medium transition-all hover:scale-105"
+            >
+              <HelpCircle className="w-4 h-4" />
+              Hướng dẫn
+            </Link>
+          </nav>
+
           {!isAuthenticated ? (
-            /* 1. HIỂN THỊ SEARCH BAR KHI CHƯA LOGIN */
+            /* 1. HIỂN THỊ SEARCH BAR KHI CHƯA LOGIN (Thêm một search bar nhỏ hoặc nút search) */
             <form 
               onSubmit={(e) => {
                 e.preventDefault();
                 const keyword = e.target.search.value;
                 navigate(`/tim-phong?keyword=${encodeURIComponent(keyword)}`);
               }}
-              className="w-full relative group"
+              className="flex-1 relative group ml-4"
             >
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#1565C0] transition-colors">
-                <Search className="w-4 h-4" />
+              <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#1565C0] transition-colors">
+                <Search className="w-3.5 h-3.5" />
               </div>
               <input
                 name="search"
                 type="text"
-                placeholder="Tìm phòng trọ, căn hộ, chung cư..."
-                className="w-full h-11 pl-11 pr-4 bg-white border-none rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#FFA726] shadow-inner transition-all"
+                placeholder="Tìm nhanh..."
+                className="w-full h-9 pl-9 pr-4 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-xs text-white placeholder:text-white/50 focus:outline-none focus:bg-white focus:text-gray-900 focus:placeholder:text-gray-400 transition-all"
               />
             </form>
           ) : (
-            /* 2. HIỂN THỊ MENU ITEMS KHI ĐÃ LOGIN */
-            <nav className="flex items-center gap-8">
+            /* 2. CHỈ HIỂN THỊ NÚT QUẢN LÝ CHO CHỦ NHÀ */
+            user?.role === 'owner' ? (
               <Link
-                to="/tim-phong"
-                className="flex items-center gap-1.5 text-white/80 hover:text-white text-sm font-medium transition-all hover:scale-105"
+                to="/quan-ly-phong"
+                className="flex items-center gap-1.5 bg-[#FFA726] px-3 py-1.5 rounded-lg text-white text-sm font-bold shadow-lg hover:scale-105 transition-all ml-4"
               >
-                <Search className="w-4 h-4" />
-                Tìm phòng
+                <PlusCircle className="w-4 h-4" />
+                Quản lý
               </Link>
+            ) : user?.role === 'admin' ? (
               <Link
-                to="/tin-tuc"
-                className="flex items-center gap-1.5 text-white/80 hover:text-white text-sm font-medium transition-all hover:scale-105"
+                to="/admin"
+                className="flex items-center gap-1.5 bg-red-500 px-3 py-1.5 rounded-lg text-white text-sm font-bold shadow-lg hover:scale-105 transition-all ml-4"
               >
-                <BookOpen className="w-4 h-4" />
-                Tin tức
+                <LayoutDashboard className="w-4 h-4" />
+                Quản trị
               </Link>
-              <Link
-                to="/huong-dan"
-                className="flex items-center gap-1.5 text-white/80 hover:text-white text-sm font-medium transition-all hover:scale-105"
-              >
-                <HelpCircle className="w-4 h-4" />
-                Hướng dẫn
-              </Link>
-              {/* Chỉ hiện cho chủ nhà (owner) */}
-              {user?.role === 'owner' && (
-                <Link
-                  to="/quan-ly-phong"
-                  className="flex items-center gap-1.5 bg-white/10 px-3 py-1.5 rounded-lg text-[#FFA726] text-sm font-bold border border-[#FFA726]/30 hover:bg-white/20 transition-all"
-                >
-                  <PlusCircle className="w-4 h-4" />
-                  Quản lý
-                </Link>
-              )}
-            </nav>
+            ) : null
           )}
         </div>
 
         {/* ── Right Side: Actions ── */}
         <div className="flex items-center gap-2 sm:gap-3">
 
-          {/* Favorites */}
+
+          {/* ❤️ Wishlist Icon */}
           <button
-            onClick={() => handleProtectedAction('/yeu-thich')}
+            onClick={() => handleProtectedAction('/wishlist')}
             className="p-2 text-white hover:bg-white/10 rounded-full transition-colors relative"
-            title="Tin yêu thích"
+            title="Yêu thích"
           >
             <Heart className="w-5 h-5" />
-            {isAuthenticated && (
-              <span className="absolute top-1 right-1 w-2 h-2 bg-[#FFA726] rounded-full border border-[#1565C0]" />
+            {/* Badge số lượng yêu thích */}
+            {isAuthenticated && wishlist.length > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-[#FFA726] rounded-full text-[10px] font-bold flex items-center justify-center border border-[#1565C0]">
+                {wishlist.length}
+              </span>
             )}
           </button>
 
@@ -122,10 +149,10 @@ export default function Navbar() {
             title="Tin nhắn"
           >
             <MessageCircle className="w-5 h-5" />
-            {/* Badge số tin nhắn chưa đọc — sẽ implement sau */}
-            {isAuthenticated && (
+            {/* Badge số tin nhắn chưa đọc */}
+            {isAuthenticated && chatUnreadCount > 0 && (
               <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 rounded-full text-[10px] font-bold flex items-center justify-center border border-[#1565C0]">
-                0
+                {chatUnreadCount}
               </span>
             )}
           </button>
@@ -138,9 +165,11 @@ export default function Navbar() {
               title="Thông báo"
             >
               <Bell className="w-5 h-5" />
-              <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 rounded-full text-[10px] font-bold flex items-center justify-center border border-[#1565C0]">
-                0
-              </span>
+              {notificationUnreadCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 rounded-full text-[10px] font-bold flex items-center justify-center border border-[#1565C0]">
+                  {notificationUnreadCount}
+                </span>
+              )}
             </button>
           )}
 
@@ -149,9 +178,16 @@ export default function Navbar() {
             {isAuthenticated ? (
               /* GIAO DIỆN KHI ĐÃ ĐĂNG NHẬP */
               <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 cursor-pointer group">
-                  <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center border border-white/30 group-hover:bg-white/30 transition-all">
-                    <UserIcon className="w-5 h-5 text-white" />
+                <div 
+                  onClick={() => navigate('/profile')}
+                  className="flex items-center gap-2 cursor-pointer group"
+                >
+                  <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center border border-white/30 group-hover:bg-white/30 transition-all overflow-hidden">
+                    {user?.avatarUrl ? (
+                      <img src={user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                    ) : (
+                      <UserIcon className="w-5 h-5 text-white" />
+                    )}
                   </div>
                   <div className="hidden md:block text-left">
                     <p className="text-[10px] text-white/70 leading-none mb-1 uppercase tracking-wider">Thành viên</p>
@@ -160,7 +196,10 @@ export default function Navbar() {
                 </div>
 
                 <button
-                  onClick={() => logout()}
+                  onClick={async () => {
+                    await logout();
+                    navigate('/');
+                  }}
                   className="text-white/70 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-full"
                   title="Đăng xuất"
                 >
@@ -187,10 +226,10 @@ export default function Navbar() {
           {/* Post Ad Button (Primary CTA) */}
           <Button
             onClick={() => handleProtectedAction('/dang-tin')}
-            className="hidden xs:flex bg-[#FFA726] hover:bg-[#F57C00] text-white font-bold px-4 sm:px-5 rounded-xl shadow-lg shadow-[#FFA726]/20 items-center gap-2 h-10 sm:h-11 transform active:scale-95 transition-all"
+            className="xs:flex bg-[#FFA726] hover:bg-[#F57C00] text-white font-bold px-4 sm:px-6 rounded-xl shadow-lg shadow-orange-900/20 items-center gap-2 h-10 sm:h-11 transform active:scale-95 transition-all border-2 border-white/10"
           >
-            <PlusCircle className="w-4 h-4" />
-            <span className="hidden sm:inline">Đăng tin</span>
+            <PlusCircle className="w-4 h-4 animate-pulse" />
+            <span className="hidden xs:inline">Đăng tin</span>
           </Button>
 
           {/* Mobile Menu Toggle */}
@@ -206,6 +245,18 @@ export default function Navbar() {
       {/* Mobile Menu */}
       {open && (
         <div className="md:hidden bg-[#1565C0] border-t border-white/10 px-6 py-4 flex flex-col gap-4">
+          {/* Mobile Ad Button */}
+          <Button
+            onClick={() => {
+              setOpen(false);
+              handleProtectedAction('/dang-tin');
+            }}
+            className="w-full bg-[#FFA726] hover:bg-[#F57C00] text-white font-bold h-11 rounded-xl shadow-lg flex items-center justify-center gap-2 border-2 border-white/10"
+          >
+            <PlusCircle className="w-5 h-5" />
+            Đăng tin ngay
+          </Button>
+
           {/* Mobile Search — chỉ hiện khi chưa đăng nhập */}
           {!isAuthenticated && (
             <div className="relative">
@@ -218,23 +269,33 @@ export default function Navbar() {
             </div>
           )}
 
-          {/* Mobile Nav Links — chỉ hiện khi đã đăng nhập */}
-          {isAuthenticated && (
-            <div className="flex flex-col gap-1">
-              <Link to="/tim-phong" onClick={() => setOpen(false)} className="flex items-center gap-3 text-white/90 hover:text-white py-2.5 border-b border-white/10 text-sm font-medium">
-                <Search className="w-4 h-4" /> Tìm phòng
-              </Link>
-              <Link to="/tin-nhan" onClick={() => setOpen(false)} className="flex items-center gap-3 text-white/90 hover:text-white py-2.5 border-b border-white/10 text-sm font-medium">
-                <MessageCircle className="w-4 h-4" /> Tin nhắn
-              </Link>
-              <Link to="/tin-tuc" onClick={() => setOpen(false)} className="flex items-center gap-3 text-white/90 hover:text-white py-2.5 border-b border-white/10 text-sm font-medium">
-                <BookOpen className="w-4 h-4" /> Tin tức
-              </Link>
-              <Link to="/huong-dan" onClick={() => setOpen(false)} className="flex items-center gap-3 text-white/90 hover:text-white py-2.5 text-sm font-medium">
-                <HelpCircle className="w-4 h-4" /> Hướng dẫn
-              </Link>
-            </div>
-          )}
+          {/* Mobile Nav Links — Luôn hiển thị */}
+          <div className="flex flex-col gap-1">
+            <Link to="/tim-phong" onClick={() => setOpen(false)} className="flex items-center gap-3 text-white/90 hover:text-white py-2.5 border-b border-white/10 text-sm font-medium">
+              <Search className="w-4 h-4 text-[#FFA726]" /> Tìm phòng
+            </Link>
+            {isAuthenticated && (
+              <>
+                <Link to="/tin-nhan" onClick={() => setOpen(false)} className="flex items-center gap-3 text-white/90 hover:text-white py-2.5 border-b border-white/10 text-sm font-medium">
+                  <MessageCircle className="w-4 h-4 text-[#FFA726]" /> Tin nhắn
+                </Link>
+                <Link to="/wishlist" onClick={() => setOpen(false)} className="flex items-center gap-3 text-white/90 hover:text-white py-2.5 border-b border-white/10 text-sm font-medium">
+                  <Heart className="w-4 h-4 text-[#FFA726]" /> Yêu thích
+                </Link>
+                {user?.role === 'admin' && (
+                  <Link to="/admin" onClick={() => setOpen(false)} className="flex items-center gap-3 text-white/90 hover:text-white py-2.5 border-b border-white/10 text-sm font-medium">
+                    <LayoutDashboard className="w-4 h-4 text-[#FFA726]" /> Quản trị
+                  </Link>
+                )}
+              </>
+            )}
+            <Link to="/tin-tuc" onClick={() => setOpen(false)} className="flex items-center gap-3 text-white/90 hover:text-white py-2.5 border-b border-white/10 text-sm font-medium">
+              <BookOpen className="w-4 h-4 text-[#FFA726]" /> Tin tức
+            </Link>
+            <Link to="/huong-dan" onClick={() => setOpen(false)} className="flex items-center gap-3 text-white/90 hover:text-white py-2.5 text-sm font-medium">
+              <HelpCircle className="w-4 h-4 text-[#FFA726]" /> Hướng dẫn
+            </Link>
+          </div>
 
           <div className="flex flex-col gap-2">
             {!isAuthenticated ? (
@@ -251,8 +312,12 @@ export default function Navbar() {
               /* MOBILE: ĐÃ LOGIN */
               <div className="bg-white/10 rounded-xl p-4 flex flex-col gap-4">
                 <div className="flex items-center gap-3 text-white">
-                  <div className="w-12 h-12 bg-[#FFA726] rounded-full flex items-center justify-center">
-                    <UserIcon className="w-6 h-6" />
+                  <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center overflow-hidden border border-white/30">
+                    {user?.avatarUrl ? (
+                      <img src={user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                    ) : (
+                      <UserIcon className="w-6 h-6 text-white" />
+                    )}
                   </div>
                   <div className="text-left">
                     <p className="font-bold">{user?.displayName}</p>
@@ -262,7 +327,11 @@ export default function Navbar() {
                 <Button
                   variant="destructive"
                   className="w-full bg-red-500 hover:bg-red-600"
-                  onClick={() => { logout(); setOpen(false); }}
+                  onClick={async () => { 
+                    await logout(); 
+                    setOpen(false);
+                    navigate('/login');
+                  }}
                 >
                   Đăng xuất
                 </Button>

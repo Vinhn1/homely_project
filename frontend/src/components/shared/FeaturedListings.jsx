@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { MapPin, Star, Heart, ArrowRight, Maximize2, Loader2 } from 'lucide-react'
+import { MapPin, Star, ArrowRight, Maximize2, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { usePropertyStore } from '@/store/usePropertyStore'

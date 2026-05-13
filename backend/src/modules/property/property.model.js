@@ -38,8 +38,8 @@ const propertySchema = new mongoose.Schema({
     // Trạng thái bài đăng (owner quản lý)
     listingStatus: {
         type: String,
-        enum: ['active', 'hidden', 'expired'],
-        default: 'active'
+        enum: ['pending', 'active', 'hidden', 'expired'],
+        default: 'pending'
     },
     // Ngày hết hạn tin đăng (30 ngày)
     expiresAt: {
@@ -88,7 +88,7 @@ const propertySchema = new mongoose.Schema({
         city: {
             type: String,
             required: true,
-            default: 'Hồ Chí Minh'
+            default: 'Vĩnh Long'
         },
         coordinates: {
             lat: { type: Number },

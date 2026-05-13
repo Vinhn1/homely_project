@@ -63,7 +63,12 @@ const UserSchema = new mongoose.Schema({
     banReason: {
         type: String,
         trim: true
-    }
+    },
+    // Danh sách yêu thích
+    wishlist: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Property'
+    }]
 }, {
     timestamps: true
 })

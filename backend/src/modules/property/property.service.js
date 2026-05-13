@@ -34,29 +34,71 @@ export const getAllProperties = async (queryParams) => {
         maxPrice,
         category,
         status,
+        district,
+        minArea,
+        keyword,
         sort = '-createdAt'   // Mặc định: mới nhất lên đầu
     } = queryParams;
 
     // Xây dựng filter object động
-    const filter = { listingStatus: 'active' };
+    const filter = {
+        $and: [
+            {
+                $or: [
+                    { listingStatus: 'active' },
+                    { listingStatus: { $exists: false } }
+                ]
+            }
+        ]
+    };
 
-    if (city) filter['location.city'] = { $regex: city, $options: 'i' };
-    if (category) filter.category = category;
-    if (status) filter.status = status;
+    if (city) filter.$and.push({ 'location.city': { $regex: city, $options: 'i' } });
+    if (district) filter.$and.push({ 'location.district': district });
+    if (category) filter.$and.push({ category: category });
+    if (status) filter.$and.push({ status: status });
+    
     if (minPrice || maxPrice) {
-        filter.price = {};
-        if (minPrice) filter.price.$gte = Number(minPrice);
-        if (maxPrice) filter.price.$lte = Number(maxPrice);
+        const priceFilter = {};
+        if (minPrice) priceFilter.$gte = Number(minPrice);
+        if (maxPrice) priceFilter.$lte = Number(maxPrice);
+        filter.$and.push({ price: priceFilter });
     }
 
+    if (minArea) {
+        filter.$and.push({ area: { $gte: Number(minArea) } });
+    }
+
+    // Keyword search (Title or Description)
+    if (keyword) {
+        filter.$and.push({
+            $or: [
+                { title: { $regex: keyword, $options: 'i' } },
+                { description: { $regex: keyword, $options: 'i' } },
+                { 'location.address': { $regex: keyword, $options: 'i' } }
+            ]
+        });
+    }
+
+    // If $and only has the default status filter, simplify it back to a flat object if possible
+    // But keeping it as $and is safer for dynamic additions.
+
+
     const skip = (Number(page) - 1) * Number(limit);
+
+    // Xử lý sort
+    let sortObj = {};
+    if (sort === 'price-asc') sortObj = { price: 1 };
+    else if (sort === 'price-desc') sortObj = { price: -1 };
+    else if (sort === 'oldest') sortObj = { createdAt: 1 };
+    else sortObj = { createdAt: -1 };
 
     const [properties, total] = await Promise.all([
         Property.find(filter)
             .populate('owner', 'displayName email')
             .populate('category', 'name')
             .populate('amenities', 'name icon')
-            .sort(sort)
+            .populate('location.district', 'name')
+            .sort(sortObj)
             .skip(skip)
             .limit(Number(limit)),
         Property.countDocuments(filter)
@@ -77,7 +119,7 @@ export const getAllProperties = async (queryParams) => {
 // ================================
 // GET ONE — Chi tiết 1 bài đăng
 // ================================
-export const getPropertyById = async (id) => {
+export const getPropertyById = async (id, requester) => {
 
     const property = await Property.findById(id)
         .populate('owner', 'displayName email phone')
@@ -89,8 +131,18 @@ export const getPropertyById = async (id) => {
         throw new AppError('Không tìm thấy bài đăng này', 404);
     }
 
+    const isOwner = requester && property.owner?._id?.toString() === requester._id.toString();
+    const isAdmin = requester?.role === 'admin';
+    const isPubliclyVisible = property.listingStatus === 'active' || !property.listingStatus;
+
+    if (!isPubliclyVisible && !isOwner && !isAdmin) {
+        throw new AppError('Bài đăng này chưa được duyệt hoặc đã bị ẩn', 404);
+    }
+
     // Tăng view count mỗi khi có người xem
-    await Property.findByIdAndUpdate(id, { $inc: { viewCount: 1 } });
+    if (isPubliclyVisible) {
+        await Property.findByIdAndUpdate(id, { $inc: { viewCount: 1 } });
+    }
 
     return property;
 };
@@ -114,7 +166,7 @@ export const updateProperty = async (id, data, requesterId) => {
 
     const updated = await Property.findByIdAndUpdate(
         id,
-        { ...data },
+        { ...data, listingStatus: 'pending' },
         { new: true, runValidators: true }
     );
 

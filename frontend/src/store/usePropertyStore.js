@@ -10,6 +10,12 @@ export const usePropertyStore = create((set, get) => ({
     districts: [],
     loading: false,
     error: null,
+    pagination: {
+        total: 0,
+        page: 1,
+        limit: 10,
+        totalPages: 1
+    },
 
     // Fetch metadata
     fetchMetadata: async () => {
@@ -40,9 +46,27 @@ export const usePropertyStore = create((set, get) => ({
         try {
             const res = await propertyApi.getAllProperties(params);
             // Backend trả về { properties: [...], pagination: {...} }
-            set({ properties: res.data.data.properties || [], loading: false });
+            set({ 
+                properties: res.data.data.properties || [], 
+                pagination: res.data.data.pagination || { total: 0, page: 1, totalPages: 1 },
+                loading: false 
+            });
         } catch (error) {
             set({ error: error.response?.data?.message || "Lỗi tải danh sách", loading: false });
+        }
+    },
+    
+    fetchMyProperties: async (params) => {
+        set({ loading: true });
+        try {
+            const res = await propertyApi.getMyProperties(params);
+            set({ 
+                properties: res.data.data.properties || [], 
+                pagination: res.data.data.pagination || { total: 0, page: 1, totalPages: 1 },
+                loading: false 
+            });
+        } catch (error) {
+            set({ error: error.response?.data?.message || "Lỗi tải danh sách của bạn", loading: false });
         }
     },
 
@@ -63,7 +87,6 @@ export const usePropertyStore = create((set, get) => ({
         set({ loading: true });
         try {
             const res = await propertyApi.createProperty(data);
-            // Backend trả về { property: {...} }
             const newProperty = res.data.data.property;
             set((state) => ({ 
                 properties: [newProperty, ...state.properties],
@@ -75,6 +98,41 @@ export const usePropertyStore = create((set, get) => ({
             set({ loading: false });
             const message = error.response?.data?.message || "Đăng tin thất bại";
             toast.error(message);
+            throw error;
+        }
+    },
+
+    updateProperty: async (id, data) => {
+        set({ loading: true });
+        try {
+            const res = await propertyApi.updateProperty(id, data);
+            const updatedProperty = res.data.data.property;
+            set((state) => ({
+                properties: state.properties.map(p => p._id === id ? updatedProperty : p),
+                currentProperty: updatedProperty,
+                loading: false
+            }));
+            toast.success("Cập nhật tin đăng thành công!");
+            return updatedProperty;
+        } catch (error) {
+            set({ loading: false });
+            toast.error(error.response?.data?.message || "Cập nhật thất bại");
+            throw error;
+        }
+    },
+
+    deleteProperty: async (id) => {
+        set({ loading: true });
+        try {
+            await propertyApi.deleteProperty(id);
+            set((state) => ({
+                properties: state.properties.filter(p => p._id !== id),
+                loading: false
+            }));
+            toast.success("Đã xóa tin đăng");
+        } catch (error) {
+            set({ loading: false });
+            toast.error(error.response?.data?.message || "Xóa thất bại");
             throw error;
         }
     }

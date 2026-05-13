@@ -54,7 +54,7 @@ export const useAuthStore = create((set, get) => ({
 
             // Gửi request — browser tự đính kèm refreshToken cookie nhờ withCredentials
             const response = await axios.post(
-                'http://localhost:5000/api/v1/auth/refresh-token',
+                `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1'}/auth/refresh-token`,
                 {},
                 { withCredentials: true }
             );
@@ -93,7 +93,7 @@ export const useAuthStore = create((set, get) => ({
         try {
 
             const response = await axios.post(
-                'http://localhost:5000/api/v1/auth/login',
+                `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1'}/auth/login`,
                 data,
                 { withCredentials: true }
             );
@@ -118,16 +118,12 @@ export const useAuthStore = create((set, get) => ({
         try {
 
             const response = await axios.post(
-                'http://localhost:5000/api/v1/auth/register',
+                `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1'}/auth/register`,
                 data,
                 { withCredentials: true }
             );
 
-            const { accessToken, user } = response.data.data;
-
-            // Reuse action
-            get().setAuth({ accessToken, user });
-            
+            // Đăng ký thành công, backend không còn trả về tokens
             return response.data;
 
         } catch (error) {
@@ -141,17 +137,106 @@ export const useAuthStore = create((set, get) => ({
         try {
 
             // Gọi API Logout để backend xóa cookie (refresh token)
-            await axios.post('http://localhost:5000/api/v1/auth/logout', {}, { withCredentials: true });
+            const { accessToken } = get();
+            await axios.post(
+                `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1'}/auth/logout`, 
+                {}, 
+                { 
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`
+                    },
+                    withCredentials: true 
+                }
+            );
 
-            // Xóa thông tin phía client (Store)
+        } catch (error) {
+            console.error("Lỗi đăng xuất: ", error.response?.data?.message || error.message);
+        } finally {
+            // Luôn xóa thông tin phía client (Store) để tránh bị kẹt trạng thái đăng nhập
             set({
                 accessToken: null,
                 user: null,
                 isAuthenticated: false
             })
+        }
+    },
 
+    // UPDATE PROFILE
+    updateProfile: async (data) => {
+        try {
+            const { accessToken } = get();
+            const response = await axios.patch(
+                `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1'}/auth/update-profile`,
+                data,
+                {
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`
+                    },
+                    withCredentials: true
+                }
+            );
+
+            const { user } = response.data.data;
+            set({ user });
+
+            return response.data;
         } catch (error) {
-            console.error("Lỗi đăng xuất: ", error.response?.data?.message || error.message);
+            throw error.response?.data || error;
+        }
+    },
+
+    // UPDATE AVATAR
+    updateAvatar: async (file) => {
+        try {
+            const { accessToken } = get();
+            const formData = new FormData();
+            formData.append('avatar', file);
+
+            const response = await axios.post(
+                `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1'}/auth/update-avatar`,
+                formData,
+                {
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`,
+                        'Content-Type': 'multipart/form-data'
+                    },
+                    withCredentials: true
+                }
+            );
+
+            const { user } = response.data.data;
+            set({ user });
+
+            return response.data;
+        } catch (error) {
+            throw error.response?.data || error;
+        }
+    },
+
+    // DELETE ACCOUNT
+    deleteAccount: async () => {
+        try {
+            const { accessToken } = get();
+            await axios.delete(
+                `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1'}/auth/delete-account`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`
+                    },
+                    withCredentials: true
+                }
+            );
+
+            // Reset state
+            set({ 
+                user: null, 
+                accessToken: null, 
+                isAuthenticated: false 
+            });
+
+            return true;
+        } catch (error) {
+            throw error.response?.data || error;
         }
     }
 }))

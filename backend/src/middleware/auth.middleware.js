@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import User from '../modules/auth/user.model.js';
 import AppError from '../utils/appError.js';
 
 /**
@@ -26,8 +27,18 @@ export const protect = async (req, res, next) => {
         // jwt.verify sẽ trả về payload (dữ liệu chứa trong token) nếu thành công
         const decodedPayload = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
 
-        // Gán thông tin user đã giải mã vào req
-        req.user = decodedPayload;
+        // Tìm user trong database để đảm bảo user vẫn tồn tại
+        const user = await User.findById(decodedPayload.id);
+        if (!user) {
+            return next(new AppError("Người dùng không còn tồn tại trên hệ thống.", 401));
+        }
+
+        if (user.isBanned) {
+            return next(new AppError(user.banReason || 'Tài khoản của bạn đã bị khóa.', 403));
+        }
+
+        // Gán thông tin user vào req
+        req.user = user;
 
         // Cho phép req đi tiếp vào controller hoặc middlware tiếp theo
         next();
@@ -36,4 +47,38 @@ export const protect = async (req, res, next) => {
         // Xử lý các lỗi phát sinh (ví dụ: Token hết hạn, Token sai...)
         return next(new AppError("Mã xác thực không hợp lệ hoặc đã hết hạn.", 401));
     }
+}
+
+export const optionalProtect = async (req, res, next) => {
+    try {
+        if (!req.headers.authorization || !req.headers.authorization.startsWith("Bearer")) {
+            return next();
+        }
+
+        const token = req.headers.authorization.split(" ")[1];
+        if (!token) return next();
+
+        const decodedPayload = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+        const user = await User.findById(decodedPayload.id);
+
+        if (user && !user.isBanned) {
+            req.user = user;
+        }
+
+        next();
+    } catch {
+        next();
+    }
+}
+
+/**
+ * Middleware phân quyền theo role
+ */
+export const restrictTo = (...roles) => {
+    return (req, res, next) => {
+        if (!roles.includes(req.user.role)) {
+            return next(new AppError('Bạn không có quyền thực hiện hành động này', 403));
+        }
+        next();
+    };
 }

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { usePropertyStore } from "@/store/usePropertyStore";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import Navbar from "@/components/shared/Navbar";
 import Footer from "@/components/shared/Footer";
 import { Button } from "@/components/ui/button";
@@ -22,7 +22,20 @@ import {
 
 export default function ListPropertyPage() {
     const navigate = useNavigate();
-    const { categories, amenities, districts, fetchMetadata, createProperty, loading } = usePropertyStore();
+    const { id } = useParams();
+    const isEditMode = !!id;
+
+    const { 
+        categories, 
+        amenities, 
+        districts, 
+        fetchMetadata, 
+        createProperty, 
+        updateProperty,
+        fetchPropertyById,
+        currentProperty,
+        loading 
+    } = usePropertyStore();
     
     const [formData, setFormData] = useState({
         title: "",
@@ -33,14 +46,37 @@ export default function ListPropertyPage() {
         district: "",
         address: "",
         amenities: [],
-        images: []
     });
 
-    const [previewImages, setPreviewImages] = useState([]);
+    const [existingImages, setExistingImages] = useState([]); // Ảnh từ DB
+    const [newImages, setNewImages] = useState([]); // File objects mới
+    const [newImagePreviews, setNewImagePreviews] = useState([]); // Preview của ảnh mới
 
     useEffect(() => {
         fetchMetadata();
-    }, [fetchMetadata]);
+        if (isEditMode) {
+            fetchPropertyById(id);
+        }
+    }, [fetchMetadata, fetchPropertyById, id, isEditMode]);
+
+    useEffect(() => {
+        if (isEditMode && currentProperty) {
+            setFormData({
+                title: currentProperty.title || "",
+                description: currentProperty.description || "",
+                price: currentProperty.price || "",
+                area: currentProperty.area || "",
+                category: currentProperty.category?._id || currentProperty.category || "",
+                district: currentProperty.district?._id || currentProperty.district || "",
+                address: currentProperty.address || "",
+                amenities: currentProperty.amenities?.map(a => a._id || a) || [],
+            });
+            
+            if (currentProperty.images) {
+                setExistingImages(currentProperty.images);
+            }
+        }
+    }, [currentProperty, isEditMode]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -59,42 +95,55 @@ export default function ListPropertyPage() {
 
     const handleImageChange = (e) => {
         const files = Array.from(e.target.files);
-        if (files.length + formData.images.length > 10) {
+        if (files.length + existingImages.length + newImages.length > 10) {
             alert("Bạn chỉ có thể tải lên tối đa 10 hình ảnh");
             return;
         }
 
-        setFormData(prev => ({ ...prev, images: [...prev.images, ...files] }));
+        setNewImages(prev => [...prev, ...files]);
 
         const newPreviews = files.map(file => URL.createObjectURL(file));
-        setPreviewImages(prev => [...prev, ...newPreviews]);
+        setNewImagePreviews(prev => [...prev, ...newPreviews]);
     };
 
-    const removeImage = (index) => {
-        setFormData(prev => ({
-            ...prev,
-            images: prev.images.filter((_, i) => i !== index)
-        }));
-        setPreviewImages(prev => prev.filter((_, i) => i !== index));
+    const removeExistingImage = (url) => {
+        setExistingImages(prev => prev.filter(item => item !== url));
+    };
+
+    const removeNewImage = (index) => {
+        setNewImages(prev => prev.filter((_, i) => i !== index));
+        // Revoke URL để giải phóng bộ nhớ
+        URL.revokeObjectURL(newImagePreviews[index]);
+        setNewImagePreviews(prev => prev.filter((_, i) => i !== index));
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         
         const data = new FormData();
+        
+        // Append basic fields
         Object.keys(formData).forEach(key => {
-            if (key === 'images') {
-                formData.images.forEach(image => data.append('images', image));
-            } else if (key === 'amenities') {
+            if (key === 'amenities') {
                 formData.amenities.forEach(id => data.append('amenities', id));
             } else {
                 data.append(key, formData[key]);
             }
         });
 
+        // Append images logic
+        newImages.forEach(image => data.append('images', image));
+        
+        // Gửi danh sách ảnh cũ còn giữ lại dưới dạng JSON string
+        data.append('existingImages', JSON.stringify(existingImages));
+
         try {
-            await createProperty(data);
-            navigate("/");
+            if (isEditMode) {
+                await updateProperty(id, data);
+            } else {
+                await createProperty(data);
+            }
+            navigate("/profile");
         } catch (error) {
             console.error("Submit error:", error);
         }
@@ -109,9 +158,11 @@ export default function ListPropertyPage() {
                     <div className="bg-[#1565C0] p-8 text-white">
                         <h1 className="text-3xl font-bold flex items-center gap-3">
                             <PlusCircle className="w-8 h-8 text-[#FFA726]" />
-                            Đăng tin cho thuê mới
+                            {isEditMode ? "Cập nhật tin đăng" : "Đăng tin cho thuê mới"}
                         </h1>
-                        <p className="text-blue-100 mt-2">Cung cấp thông tin chính xác giúp tin đăng của bạn thu hút nhiều khách hàng hơn.</p>
+                        <p className="text-blue-100 mt-2">
+                            {isEditMode ? "Chỉnh sửa các thông tin cần thiết để tin đăng của bạn luôn mới nhất." : "Cung cấp thông tin chính xác giúp tin đăng của bạn thu hút nhiều khách hàng hơn."}
+                        </p>
                     </div>
 
                     <form onSubmit={handleSubmit} className="p-8 space-y-10">
@@ -294,12 +345,29 @@ export default function ListPropertyPage() {
                             </h2>
                             
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-                                {previewImages.map((url, index) => (
-                                    <div key={index} className="relative aspect-square rounded-xl overflow-hidden group border shadow-sm">
-                                        <img src={url} alt="Preview" className="w-full h-full object-cover" />
+                                {/* Ảnh cũ từ Database */}
+                                {existingImages.map((url, index) => (
+                                    <div key={`existing-${index}`} className="relative aspect-square rounded-xl overflow-hidden group border shadow-sm ring-2 ring-blue-100">
+                                        <img src={url} alt="Existing" className="w-full h-full object-cover" />
+                                        <div className="absolute top-1 left-1 bg-blue-600 text-white text-[10px] px-1.5 py-0.5 rounded-md font-bold shadow-sm">ĐÃ ĐĂNG</div>
                                         <button 
                                             type="button"
-                                            onClick={() => removeImage(index)}
+                                            onClick={() => removeExistingImage(url)}
+                                            className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                                        >
+                                            <X className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                ))}
+
+                                {/* Ảnh mới chọn */}
+                                {newImagePreviews.map((url, index) => (
+                                    <div key={`new-${index}`} className="relative aspect-square rounded-xl overflow-hidden group border shadow-sm ring-2 ring-orange-100">
+                                        <img src={url} alt="New Preview" className="w-full h-full object-cover" />
+                                        <div className="absolute top-1 left-1 bg-[#FFA726] text-white text-[10px] px-1.5 py-0.5 rounded-md font-bold shadow-sm">MỚI</div>
+                                        <button 
+                                            type="button"
+                                            onClick={() => removeNewImage(index)}
                                             className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
                                         >
                                             <X className="w-4 h-4" />
@@ -307,10 +375,10 @@ export default function ListPropertyPage() {
                                     </div>
                                 ))}
                                 
-                                {previewImages.length < 10 && (
+                                {(existingImages.length + newImages.length) < 10 && (
                                     <label className="aspect-square border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center gap-2 hover:bg-gray-50 hover:border-[#1565C0] cursor-pointer transition-all">
                                         <Upload className="w-8 h-8 text-gray-400" />
-                                        <span className="text-xs text-gray-500 font-medium text-center px-2">Tải ảnh lên<br/>(Tối đa 10)</span>
+                                        <span className="text-xs text-gray-500 font-medium text-center px-2">Tải ảnh lên<br/>(Tối đa {10 - existingImages.length - newImages.length})</span>
                                         <input 
                                             type="file"
                                             multiple
@@ -345,7 +413,7 @@ export default function ListPropertyPage() {
                                         Đang xử lý...
                                     </>
                                 ) : (
-                                    "Đăng tin ngay"
+                                    isEditMode ? "Lưu thay đổi" : "Đăng tin ngay"
                                 )}
                             </Button>
                         </div>

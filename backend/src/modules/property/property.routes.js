@@ -7,7 +7,7 @@
  */
 import express from 'express';
 import * as propertyController from './property.controller.js';
-import { protect } from '../../middleware/auth.middleware.js';
+import { optionalProtect, protect } from '../../middleware/auth.middleware.js';
 import { uploadImages } from '../../middleware/upload.middleware.js';
 
 const router = express.Router();
@@ -15,7 +15,7 @@ const router = express.Router();
 // ── Public Routes ──
 // Ai cũng có thể xem danh sách và chi tiết
 router.get('/', propertyController.getAllProperties);
-router.get('/:id', propertyController.getPropertyById);
+router.get('/:id', optionalProtect, propertyController.getPropertyById);
 
 // ── Private Routes (cần đăng nhập) ──
 // Chỉ owner mới được đăng tin, sửa, xóa, xem bài đăng của mình
